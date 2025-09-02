@@ -1,0 +1,19 @@
+{
+    "message": "Operation completed successfully.",
+    "data": {
+        "id": 1,
+        "first_name": "Tuan Kiet",
+        "last_name": "Do",
+        "phone_number": "+840814171601",
+        "photo": null,
+        "user_credential_id": 1,
+        "dob": "2000-12-16",
+        "gender": "male",
+        "created_at": "2025-05-28T17:34:23.000000Z",
+        "updated_at": "2025-05-28T17:34:23.000000Z",
+        "user": {
+            "id": 1,
+            "email": "kietdat1612000@gmail.com"
+        }
+    }
+}

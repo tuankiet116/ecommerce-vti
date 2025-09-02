@@ -1,0 +1,37 @@
+{
+    "message": "Operation completed successfully.",
+    "data": {
+        "id": 1,
+        "user_credential_id": 1,
+        "handle": "green-leaf-market",
+        "shop_name": "Green Leaf Market",
+        "bussiness_name": "Green Leaf Corp.",
+        "bussiness_number": "BUSS-20250710-001",
+        "bussiness_tax_number": null,
+        "contact_person_name": "Nguyen Van A",
+        "contact_person_number": null,
+        "contact_person_email": "van.a@greenleaf.com",
+        "contact_phone_number": "+84901234567",
+        "profile_image": null,
+        "banner_image": null,
+        "description": "A premium organic products retailer with a focus on sustainability and local produce.",
+        "address": "123 Đường Hoa Lan, Phường 2",
+        "state": null,
+        "city": "Quận Phú Nhuận",
+        "zip_code": null,
+        "country": "Vietnam",
+        "status": "active",
+        "verified_at": null,
+        "created_at": "2025-07-09T17:17:32.000000Z",
+        "updated_at": "2025-07-09T18:28:09.000000Z",
+        "legal_person_first_name": "Tuan Kiet",
+        "legal_person_last_name": "Do",
+        "legal_person_cni_number": "123456789",
+        "apartment": null,
+        "legal_person_full_name": "Tuan Kiet Do",
+        "user": {
+            "id": 1,
+            "email": "tuankiet.do.116@gmail.com"
+        }
+    }
+}

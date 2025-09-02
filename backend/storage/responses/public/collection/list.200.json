@@ -1,0 +1,45 @@
+{
+    "message": "Operation completed successfully.",
+    "data": {
+        "current_page": 1,
+        "data": [
+            {
+                "id": 1,
+                "shop_id": 1,
+                "name": "Collection 1",
+                "slug": "collection-1",
+                "description": "Collection 1 description",
+                "is_active": true,
+                "created_at": "2025-07-12T06:44:11.000000Z",
+                "updated_at": "2025-07-12T06:44:11.000000Z"
+            }
+        ],
+        "first_page_url": "http://localhost:8000/api/public/collection/list?page=1",
+        "from": 1,
+        "last_page": 1,
+        "last_page_url": "http://localhost:8000/api/public/collection/list?page=1",
+        "links": [
+            {
+                "url": null,
+                "label": "&laquo; Previous",
+                "active": false
+            },
+            {
+                "url": "http://localhost:8000/api/public/collection/list?page=1",
+                "label": "1",
+                "active": true
+            },
+            {
+                "url": null,
+                "label": "Next &raquo;",
+                "active": false
+            }
+        ],
+        "next_page_url": null,
+        "path": "http://localhost:8000/api/public/collection/list",
+        "per_page": 20,
+        "prev_page_url": null,
+        "to": 1,
+        "total": 1
+    }
+}

@@ -1,0 +1,6 @@
+{
+    "message": "Email is verified.",
+    "data": {
+        "is_verified": true
+    }
+}

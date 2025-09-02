@@ -1,0 +1,148 @@
+{
+    "status": true,
+    "message": "Product retrieved successfully",
+    "data": {
+        "id": 1,
+        "name": "iPhone 14 Pro",
+        "slug": "iphone-14-pro",
+        "description": "Latest iPhone with advanced camera system and A16 Bionic chip. Features include ProRes video recording, Always-On display, and Dynamic Island.",
+        "price": 999.99,
+        "is_active": true,
+        "category": {
+            "id": 1,
+            "name": "Electronics",
+            "slug": "electronics",
+            "description": "Electronic devices and gadgets"
+        },
+        "shop": {
+            "id": 1,
+            "name": "TechStore Premium",
+            "slug": "techstore-premium",
+            "description": "Your trusted technology partner",
+            "logo": "https://example.com/storage/shops/techstore-logo.jpg",
+            "address": "123 Tech Street, Silicon Valley",
+            "phone": "+1-555-0123",
+            "email": "info@techstore.com"
+        },
+        "images": [
+            {
+                "id": 1,
+                "url": "https://example.com/storage/products/iphone-14-pro-1.jpg",
+                "alt": "iPhone 14 Pro Front View",
+                "is_primary": true
+            },
+            {
+                "id": 2,
+                "url": "https://example.com/storage/products/iphone-14-pro-2.jpg",
+                "alt": "iPhone 14 Pro Back View",
+                "is_primary": false
+            },
+            {
+                "id": 3,
+                "url": "https://example.com/storage/products/iphone-14-pro-3.jpg",
+                "alt": "iPhone 14 Pro Side View",
+                "is_primary": false
+            }
+        ],
+        "variants": [
+            {
+                "id": 1,
+                "price": 999.99,
+                "stock_quantity": 50,
+                "in_stock": true,
+                "options": [
+                    {
+                        "name": "Color",
+                        "value": "Space Black"
+                    },
+                    {
+                        "name": "Storage",
+                        "value": "128GB"
+                    }
+                ]
+            },
+            {
+                "id": 2,
+                "price": 1099.99,
+                "stock_quantity": 30,
+                "in_stock": true,
+                "options": [
+                    {
+                        "name": "Color",
+                        "value": "Space Black"
+                    },
+                    {
+                        "name": "Storage",
+                        "value": "256GB"
+                    }
+                ]
+            },
+            {
+                "id": 3,
+                "price": 999.99,
+                "stock_quantity": 0,
+                "in_stock": false,
+                "options": [
+                    {
+                        "name": "Color",
+                        "value": "Deep Purple"
+                    },
+                    {
+                        "name": "Storage",
+                        "value": "128GB"
+                    }
+                ]
+            }
+        ],
+        "collections": [
+            {
+                "id": 1,
+                "name": "iPhone Series",
+                "slug": "iphone-series"
+            },
+            {
+                "id": 2,
+                "name": "Premium Phones",
+                "slug": "premium-phones"
+            }
+        ],
+        "specifications": {
+            "Display": "6.1-inch Super Retina XDR",
+            "Chip": "A16 Bionic",
+            "Camera": "Pro camera system with 48MP Main",
+            "Battery": "Up to 23 hours video playback",
+            "Storage": "128GB, 256GB, 512GB, 1TB",
+            "Colors": "Space Black, Silver, Gold, Deep Purple"
+        },
+        "total_stock": 80,
+        "min_price": 999.99,
+        "max_price": 1099.99,
+        "average_rating": 4.8,
+        "review_count": 245,
+        "reviews_summary": {
+            "5_star": 180,
+            "4_star": 45,
+            "3_star": 15,
+            "2_star": 3,
+            "1_star": 2
+        },
+        "related_products": [
+            {
+                "id": 4,
+                "name": "iPhone 14",
+                "slug": "iphone-14",
+                "price": 799.99,
+                "image": "https://example.com/storage/products/iphone-14-thumb.jpg"
+            },
+            {
+                "id": 5,
+                "name": "AirPods Pro (2nd generation)",
+                "slug": "airpods-pro-2nd-gen",
+                "price": 249.99,
+                "image": "https://example.com/storage/products/airpods-pro-thumb.jpg"
+            }
+        ],
+        "created_at": "2025-01-15T10:30:00Z",
+        "updated_at": "2025-01-20T16:45:00Z"
+    }
+}

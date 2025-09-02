@@ -1,0 +1,296 @@
+{
+    "message": "Operation completed successfully.",
+    "data": {
+        "id": 2,
+        "shop_id": 1,
+        "name": "Áo Thun Nhiều Màu",
+        "slug": "ao-thun-nhieu-mau",
+        "description": "Có nhiều lựa chọn màu và size",
+        "is_active": true,
+        "created_at": "2025-07-10T14:19:17.000000Z",
+        "updated_at": "2025-07-10T14:19:17.000000Z",
+        "images": [],
+        "options": [
+            {
+                "id": 3,
+                "shop_id": 1,
+                "product_id": 2,
+                "name": "Màu",
+                "created_at": "2025-07-10T14:19:17.000000Z",
+                "updated_at": "2025-07-10T14:19:17.000000Z",
+                "option_value": [
+                    {
+                        "id": 5,
+                        "shop_id": 1,
+                        "product_id": 2,
+                        "product_option_id": 3,
+                        "value": "Đỏ",
+                        "created_at": "2025-07-10T14:19:17.000000Z",
+                        "updated_at": "2025-07-10T14:19:17.000000Z"
+                    },
+                    {
+                        "id": 6,
+                        "shop_id": 1,
+                        "product_id": 2,
+                        "product_option_id": 3,
+                        "value": "Xanh",
+                        "created_at": "2025-07-10T14:19:17.000000Z",
+                        "updated_at": "2025-07-10T14:19:17.000000Z"
+                    }
+                ]
+            },
+            {
+                "id": 4,
+                "shop_id": 1,
+                "product_id": 2,
+                "name": "Size",
+                "created_at": "2025-07-10T14:19:17.000000Z",
+                "updated_at": "2025-07-10T14:19:17.000000Z",
+                "option_value": [
+                    {
+                        "id": 7,
+                        "shop_id": 1,
+                        "product_id": 2,
+                        "product_option_id": 4,
+                        "value": "M",
+                        "created_at": "2025-07-10T14:19:17.000000Z",
+                        "updated_at": "2025-07-10T14:19:17.000000Z"
+                    },
+                    {
+                        "id": 8,
+                        "shop_id": 1,
+                        "product_id": 2,
+                        "product_option_id": 4,
+                        "value": "L",
+                        "created_at": "2025-07-10T14:19:17.000000Z",
+                        "updated_at": "2025-07-10T14:19:17.000000Z"
+                    },
+                    {
+                        "id": 16,
+                        "shop_id": 1,
+                        "product_id": 2,
+                        "product_option_id": 4,
+                        "value": "S",
+                        "created_at": "2025-07-21T17:58:42.000000Z",
+                        "updated_at": "2025-07-21T17:58:42.000000Z"
+                    }
+                ]
+            },
+            {
+                "id": 8,
+                "shop_id": 1,
+                "product_id": 2,
+                "name": "Chất liệu",
+                "created_at": "2025-07-21T17:58:42.000000Z",
+                "updated_at": "2025-07-21T17:58:42.000000Z",
+                "option_value": [
+                    {
+                        "id": 17,
+                        "shop_id": 1,
+                        "product_id": 2,
+                        "product_option_id": 8,
+                        "value": "Polyeste",
+                        "created_at": "2025-07-21T17:58:42.000000Z",
+                        "updated_at": "2025-07-21T17:58:42.000000Z"
+                    },
+                    {
+                        "id": 18,
+                        "shop_id": 1,
+                        "product_id": 2,
+                        "product_option_id": 8,
+                        "value": "Cotton",
+                        "created_at": "2025-07-21T17:58:42.000000Z",
+                        "updated_at": "2025-07-21T17:58:42.000000Z"
+                    }
+                ]
+            }
+        ],
+        "variants": [
+            {
+                "id": 3,
+                "product_id": 2,
+                "shop_id": 1,
+                "name": "Đỏ / M / Polyeste",
+                "sku": "TS-BLU-L",
+                "price": "179000.00",
+                "compare_at_price": null,
+                "inventory_quantity": 5,
+                "is_default": false,
+                "is_active": true,
+                "option_value_ids": null,
+                "created_at": "2025-07-10T14:19:17.000000Z",
+                "updated_at": "2025-07-21T17:58:42.000000Z",
+                "options": [
+                    {
+                        "id": 5,
+                        "shop_id": 1,
+                        "product_id": 2,
+                        "product_option_id": 3,
+                        "value": "Đỏ",
+                        "created_at": "2025-07-10T14:19:17.000000Z",
+                        "updated_at": "2025-07-10T14:19:17.000000Z",
+                        "pivot": {
+                            "product_variant_id": 3,
+                            "product_option_value_id": 5
+                        }
+                    },
+                    {
+                        "id": 7,
+                        "shop_id": 1,
+                        "product_id": 2,
+                        "product_option_id": 4,
+                        "value": "M",
+                        "created_at": "2025-07-10T14:19:17.000000Z",
+                        "updated_at": "2025-07-10T14:19:17.000000Z",
+                        "pivot": {
+                            "product_variant_id": 3,
+                            "product_option_value_id": 7
+                        }
+                    },
+                    {
+                        "id": 17,
+                        "shop_id": 1,
+                        "product_id": 2,
+                        "product_option_id": 8,
+                        "value": "Polyeste",
+                        "created_at": "2025-07-21T17:58:42.000000Z",
+                        "updated_at": "2025-07-21T17:58:42.000000Z",
+                        "pivot": {
+                            "product_variant_id": 3,
+                            "product_option_value_id": 17
+                        }
+                    }
+                ]
+            },
+            {
+                "id": 29,
+                "product_id": 2,
+                "shop_id": 1,
+                "name": "Xanh / L / Polyeste",
+                "sku": "TS-RED-M",
+                "price": "179000.00",
+                "compare_at_price": "199000.00",
+                "inventory_quantity": 10,
+                "is_default": true,
+                "is_active": true,
+                "option_value_ids": null,
+                "created_at": "2025-07-22T17:22:18.000000Z",
+                "updated_at": "2025-07-22T17:22:18.000000Z",
+                "options": [
+                    {
+                        "id": 6,
+                        "shop_id": 1,
+                        "product_id": 2,
+                        "product_option_id": 3,
+                        "value": "Xanh",
+                        "created_at": "2025-07-10T14:19:17.000000Z",
+                        "updated_at": "2025-07-10T14:19:17.000000Z",
+                        "pivot": {
+                            "product_variant_id": 29,
+                            "product_option_value_id": 6
+                        }
+                    },
+                    {
+                        "id": 8,
+                        "shop_id": 1,
+                        "product_id": 2,
+                        "product_option_id": 4,
+                        "value": "L",
+                        "created_at": "2025-07-10T14:19:17.000000Z",
+                        "updated_at": "2025-07-10T14:19:17.000000Z",
+                        "pivot": {
+                            "product_variant_id": 29,
+                            "product_option_value_id": 8
+                        }
+                    },
+                    {
+                        "id": 17,
+                        "shop_id": 1,
+                        "product_id": 2,
+                        "product_option_id": 8,
+                        "value": "Polyeste",
+                        "created_at": "2025-07-21T17:58:42.000000Z",
+                        "updated_at": "2025-07-21T17:58:42.000000Z",
+                        "pivot": {
+                            "product_variant_id": 29,
+                            "product_option_value_id": 17
+                        }
+                    }
+                ]
+            },
+            {
+                "id": 30,
+                "product_id": 2,
+                "shop_id": 1,
+                "name": "Đỏ / M / Cotton",
+                "sku": "TS-BLU-L",
+                "price": "179000.00",
+                "compare_at_price": null,
+                "inventory_quantity": 5,
+                "is_default": false,
+                "is_active": true,
+                "option_value_ids": null,
+                "created_at": "2025-07-22T17:22:18.000000Z",
+                "updated_at": "2025-07-22T17:22:18.000000Z",
+                "options": [
+                    {
+                        "id": 5,
+                        "shop_id": 1,
+                        "product_id": 2,
+                        "product_option_id": 3,
+                        "value": "Đỏ",
+                        "created_at": "2025-07-10T14:19:17.000000Z",
+                        "updated_at": "2025-07-10T14:19:17.000000Z",
+                        "pivot": {
+                            "product_variant_id": 30,
+                            "product_option_value_id": 5
+                        }
+                    },
+                    {
+                        "id": 7,
+                        "shop_id": 1,
+                        "product_id": 2,
+                        "product_option_id": 4,
+                        "value": "M",
+                        "created_at": "2025-07-10T14:19:17.000000Z",
+                        "updated_at": "2025-07-10T14:19:17.000000Z",
+                        "pivot": {
+                            "product_variant_id": 30,
+                            "product_option_value_id": 7
+                        }
+                    },
+                    {
+                        "id": 18,
+                        "shop_id": 1,
+                        "product_id": 2,
+                        "product_option_id": 8,
+                        "value": "Cotton",
+                        "created_at": "2025-07-21T17:58:42.000000Z",
+                        "updated_at": "2025-07-21T17:58:42.000000Z",
+                        "pivot": {
+                            "product_variant_id": 30,
+                            "product_option_value_id": 18
+                        }
+                    }
+                ]
+            }
+        ],
+        "categories": [
+            {
+                "id": 11,
+                "name": "Elna Dare",
+                "description": "Laborum deleniti mollitia et laborum error odio dicta ut.",
+                "parent_id": 10,
+                "is_active": true,
+                "created_at": "2025-07-20T13:44:18.000000Z",
+                "updated_at": "2025-07-20T13:44:18.000000Z",
+                "hasChildren": false,
+                "pivot": {
+                    "product_id": 2,
+                    "category_id": 11
+                }
+            }
+        ],
+        "collections": []
+    }
+}

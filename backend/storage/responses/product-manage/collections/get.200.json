@@ -1,0 +1,12 @@
+{
+    "message": "Operation completed successfully.",
+    "data": {
+        "id": 2,
+        "shop_id": 1,
+        "name": "Collection 1",
+        "slug": "collection-1",
+        "description": "Collection 1 description",
+        "created_at": "2025-07-12T05:54:35.000000Z",
+        "updated_at": "2025-07-12T05:54:35.000000Z"
+    }
+}

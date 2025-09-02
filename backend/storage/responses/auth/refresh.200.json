@@ -1,0 +1,8 @@
+{
+    "message": "Refresh token successfully.",
+    "data": {
+        "access_token": "5|Q4ByMoaCbLMwqR65Du8YbJfDxTAAJUfo5nlpdXWGc085a538",
+        "refresh_token": "6|C03motkNJaI4VswrXupWiNVrJ5hmfzLmP8X7pMnr6d0ce0a9",
+        "expired_at": 1748283863
+    }
+}

@@ -1,0 +1,11 @@
+{
+    "message": "Operation completed successfully.",
+    "data": {
+        "id": 1,
+        "shop_name": "Green Leaf Market",
+        "handle": "green-leaf-market",
+        "description": "A premium organic products retailer with a focus on sustainability and local produce.",
+        "profile_image": null,
+        "banner_image": null
+    }
+}

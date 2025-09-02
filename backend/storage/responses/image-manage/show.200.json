@@ -1,0 +1,12 @@
+{
+    "message": "Operation completed successfully.",
+    "data": {
+        "uuid": "e4af182d-62a1-485f-99f1-33e075ed10a3",
+        "shop_id": 1,
+        "url": "http://localhost:8000/storage/images/1/e4af182d-62a1-485f-99f1-33e075ed10a3.jpg",
+        "alt_text": "",
+        "is_used": true,
+        "created_at": "2025-07-25T15:35:21.000000Z",
+        "updated_at": "2025-07-25T15:35:21.000000Z"
+    }
+}

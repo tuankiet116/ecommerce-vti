@@ -1,0 +1,131 @@
+{
+    "status": true,
+    "message": "Products retrieved successfully",
+    "data": {
+        "products": [
+            {
+                "id": 1,
+                "name": "iPhone 14 Pro",
+                "slug": "iphone-14-pro",
+                "description": "Latest iPhone with advanced camera system",
+                "price": 999.99,
+                "is_active": true,
+                "category": {
+                    "id": 1,
+                    "name": "Electronics",
+                    "slug": "electronics"
+                },
+                "images": [
+                    {
+                        "id": 1,
+                        "url": "https://example.com/storage/products/iphone-14-pro-1.jpg",
+                        "alt": "iPhone 14 Pro Front View",
+                        "is_primary": true
+                    },
+                    {
+                        "id": 2,
+                        "url": "https://example.com/storage/products/iphone-14-pro-2.jpg",
+                        "alt": "iPhone 14 Pro Back View",
+                        "is_primary": false
+                    }
+                ],
+                "variants": [
+                    {
+                        "id": 1,
+                        "price": 999.99,
+                        "stock_quantity": 50,
+                        "in_stock": true,
+                        "options": [
+                            {
+                                "name": "Color",
+                                "value": "Space Black"
+                            },
+                            {
+                                "name": "Storage",
+                                "value": "128GB"
+                            }
+                        ]
+                    },
+                    {
+                        "id": 2,
+                        "price": 1099.99,
+                        "stock_quantity": 30,
+                        "in_stock": true,
+                        "options": [
+                            {
+                                "name": "Color",
+                                "value": "Space Black"
+                            },
+                            {
+                                "name": "Storage",
+                                "value": "256GB"
+                            }
+                        ]
+                    }
+                ],
+                "min_price": 999.99,
+                "max_price": 1099.99,
+                "average_rating": 4.8,
+                "review_count": 245
+            },
+            {
+                "id": 2,
+                "name": "Samsung Galaxy S24",
+                "slug": "samsung-galaxy-s24",
+                "description": "Premium Android smartphone with AI features",
+                "price": 899.99,
+                "is_active": true,
+                "category": {
+                    "id": 1,
+                    "name": "Electronics",
+                    "slug": "electronics"
+                },
+                "images": [
+                    {
+                        "id": 3,
+                        "url": "https://example.com/storage/products/galaxy-s24-1.jpg",
+                        "alt": "Galaxy S24 Front View",
+                        "is_primary": true
+                    }
+                ],
+                "variants": [
+                    {
+                        "id": 3,
+                        "price": 899.99,
+                        "stock_quantity": 25,
+                        "in_stock": true,
+                        "options": [
+                            {
+                                "name": "Color",
+                                "value": "Phantom Black"
+                            },
+                            {
+                                "name": "Storage",
+                                "value": "256GB"
+                            }
+                        ]
+                    }
+                ],
+                "min_price": 899.99,
+                "max_price": 899.99,
+                "average_rating": 4.6,
+                "review_count": 189
+            }
+        ],
+        "shop": {
+            "id": 1,
+            "name": "TechStore Premium",
+            "slug": "techstore-premium",
+            "description": "Your trusted technology partner",
+            "logo": "https://example.com/storage/shops/techstore-logo.jpg"
+        },
+        "pagination": {
+            "current_page": 1,
+            "per_page": 15,
+            "total": 2,
+            "last_page": 1,
+            "from": 1,
+            "to": 2
+        }
+    }
+}

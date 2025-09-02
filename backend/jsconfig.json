@@ -1,0 +1,16 @@
+{
+    "compilerOptions": {
+        "baseUrl": "resources/js",
+        "target": "es6",
+        "module": "esnext",
+        "moduleResolution": "node",
+        "paths": {
+            "@/*": [
+                "*"
+            ]
+        }
+    },
+    "include": [
+        "resources/js"
+    ]
+}

@@ -1,0 +1,119 @@
+services:
+    backend:
+        build:
+            context: ./backend
+            dockerfile: docker/Dockerfile
+            target: php-fpm
+        volumes:
+            - ./backend:/var/www/html
+        environment:
+            - APP_ENV=local
+            - APP_DEBUG=true
+            - APP_KEY=${APP_KEY}
+            - DB_HOST=db
+            - DB_DATABASE=${DB_DATABASE:-watertap_backend}
+            - DB_USERNAME=${DB_USERNAME:-root}
+            - DB_PASSWORD=${DB_PASSWORD:-root}
+            - REDIS_HOST=redis
+            - MAIL_MAILER=${MAIL_MAILER}
+            - MAIL_HOST=${MAIL_HOST}
+            - MAIL_PORT=${MAIL_PORT}
+            - MAIL_USERNAME=${MAIL_USERNAME}
+            - MAIL_PASSWORD=${MAIL_PASSWORD}
+            - MAIL_FROM_ADDRESS=${MAIL_FROM_ADDRESS}
+            - MAIL_FROM_NAME=${MAIL_FROM_NAME}
+        depends_on:
+            db:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+        working_dir: /var/www/html
+        networks:
+            - laravel
+
+    frontend:
+        build:
+            context: ./frontend
+            dockerfile: docker/Dockerfile
+            target: runner
+        ports:
+            - "${FRONTEND_PORT:-3000}:3000"
+        volumes:
+            - ./frontend:/app
+        networks:
+            - laravel
+
+    nginx:
+        image: nginx:alpine
+        ports:
+            - "${NGINX_PORT:-8888}:80"
+        volumes:
+            - ./backend:/var/www/html
+            - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+        depends_on:
+            - backend
+            - frontend
+        networks:
+            - laravel
+
+    db:
+        image: postgres:16
+        ports:
+            - "5433:5432"
+        environment:
+            POSTGRES_DB: watertap_backend
+            POSTGRES_USER: root
+            POSTGRES_PASSWORD: root
+        volumes:
+            - pgdata:/var/lib/postgresql/data
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U root"]
+            interval: 5s
+            timeout: 5s
+            retries: 5
+        networks:
+            - laravel
+
+    redis:
+        image: redis:alpine
+        ports:
+            - "6379:6379"
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 5s
+            timeout: 3s
+            retries: 5
+        networks:
+            - laravel
+
+    horizon:
+        build:
+            context: ./backend
+            dockerfile: docker/Dockerfile
+            target: php-cli
+        volumes:
+            - ./backend:/var/www/html
+        command: php artisan horizon
+        environment:
+            - APP_KEY=${APP_KEY}
+            - APP_ENV=local
+            - APP_DEBUG=true
+            - DB_HOST=db
+            - DB_DATABASE=${DB_DATABASE:-watertap_backend}
+            - DB_USERNAME=${DB_USERNAME:-root}
+            - DB_PASSWORD=${DB_PASSWORD:-root}
+            - REDIS_HOST=redis
+        depends_on:
+            db:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+        networks:
+            - laravel
+        restart: always
+
+volumes:
+    pgdata:
+
+networks:
+    laravel:

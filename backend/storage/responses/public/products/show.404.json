@@ -1,0 +1,9 @@
+{
+    "status": false,
+    "message": "Product not found",
+    "data": null,
+    "error": {
+        "code": "PRODUCT_NOT_FOUND",
+        "message": "The requested product could not be found or is not available for public viewing."
+    }
+}
