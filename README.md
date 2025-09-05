@@ -1,8 +1,4 @@
-# Shopera API
-
-This is the backend service for the Water Tap project, built with Laravel. It provides APIs and backend logic for managing users, shops, and customers. The project uses Laravel Horizon for queue management, PostgreSQL as the database, and Redis for caching and queues.
-
----
+# Ecommerce VTI mock project
 
 ## Prerequisites
 
