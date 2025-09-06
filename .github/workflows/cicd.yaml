@@ -40,9 +40,10 @@ jobs:
               with:
                   node-version: "20"
 
-            - name: Enable pnpm
-              working-directory: ./frontend
-              run: corepack enable pnpm
+            - name: Install pnpm
+              uses: pnpm/action-setup@v4
+              with:
+                  version: 9.0.0
 
             - name: Get pnpm store directory
               id: pnpm-cache
@@ -87,17 +88,15 @@ jobs:
                   if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
                     echo "environment=prod" >> $GITHUB_OUTPUT
                     echo "ecr_repository=${{ secrets.ECR_REPOSITORY_PROD }}" >> $GITHUB_OUTPUT
-                    echo "eks_cluster=${{ secrets.EKS_CLUSTER_PROD }}" >> $GITHUB_OUTPUT
-                    echo "backend_secrets=${{ secrets.BACKEND_SECRETS_PROD }}" >> $GITHUB_OUTPUT
-                    echo "frontend_secrets=${{ secrets.FRONTEND_SECRETS_PROD }}" >> $GITHUB_OUTPUT
-                    echo "external_secrets_role=${{ secrets.EXTERNAL_SECRETS_ROLE_PROD }}" >> $GITHUB_OUTPUT
+                    echo "eks_cluster=${{ secrets.EKS_CLUSTER_NAME_PROD }}" >> $GITHUB_OUTPUT
+                    echo "namespace=${{ secrets.NAMESPACE_PROD }}" >> $GITHUB_OUTPUT
+                    echo "backend_secrets=${{ secrets.BACKEND_SECRET_NAME_PROD }}" >> $GITHUB_OUTPUT
                   else
                     echo "environment=dev" >> $GITHUB_OUTPUT
                     echo "ecr_repository=${{ secrets.ECR_REPOSITORY_DEV }}" >> $GITHUB_OUTPUT
-                    echo "eks_cluster=${{ secrets.EKS_CLUSTER_DEV }}" >> $GITHUB_OUTPUT
-                    echo "backend_secrets=${{ secrets.BACKEND_SECRETS_DEV }}" >> $GITHUB_OUTPUT
-                    echo "frontend_secrets=${{ secrets.FRONTEND_SECRETS_DEV }}" >> $GITHUB_OUTPUT
-                    echo "external_secrets_role=${{ secrets.EXTERNAL_SECRETS_ROLE_DEV }}" >> $GITHUB_OUTPUT
+                    echo "eks_cluster=${{ secrets.EKS_CLUSTER_NAME_DEV }}" >> $GITHUB_OUTPUT
+                    echo "namespace=${{ secrets.NAMESPACE_DEV }}" >> $GITHUB_OUTPUT
+                    echo "backend_secrets=${{ secrets.BACKEND_SECRET_NAME_DEV }}" >> $GITHUB_OUTPUT
                   fi
 
             - name: Configure AWS credentials
@@ -143,8 +142,7 @@ jobs:
                   IMAGE_TAG: ${{ github.sha }}
                   ENVIRONMENT: ${{ steps.env.outputs.environment }}
                   BACKEND_SECRETS: ${{ steps.env.outputs.backend_secrets }}
-                  FRONTEND_SECRETS: ${{ steps.env.outputs.frontend_secrets }}
-                  EXTERNAL_SECRETS_ROLE: ${{ steps.env.outputs.external_secrets_role }}
+                  NAMESPACE: ${{ steps.env.outputs.namespace }}
               run: |
                   # Update kustomization with new image tags
                   cd deployment/k8s/environments/$ENVIRONMENT
@@ -153,17 +151,18 @@ jobs:
                   sed -i "s|backend-latest|backend-$IMAGE_TAG|g" kustomization.yaml
                   sed -i "s|horizon-latest|horizon-$IMAGE_TAG|g" kustomization.yaml
                   sed -i "s|scheduler-latest|scheduler-$IMAGE_TAG|g" kustomization.yaml
-                  sed -i "s|frontend-latest|frontend-$IMAGE_TAG|g" kustomization.yaml
-
+                  sed -i "s|frontend-latest|frontend-$IMAGE_TAG|g" kust
                   # Update secrets names in external-secrets.yaml
                   sed -i "s|BACKEND_SECRETS_NAME|$BACKEND_SECRETS|g" ../../base/external-secrets.yaml
-                  sed -i "s|FRONTEND_SECRETS_NAME|$FRONTEND_SECRETS|g" ../../base/external-secrets.yaml
-                  sed -i "s|EXTERNAL_SECRETS_ROLE_ARN|$EXTERNAL_SECRETS_ROLE|g" ../../base/serviceaccount.yaml
+
+                  # Update namespace in kustomization.yaml
+                  sed -i "s|namespace: ecommerce-vti|namespace: $NAMESPACE|g" kustomization.yaml
 
             - name: Deploy to EKS
               env:
                   EKS_CLUSTER: ${{ steps.env.outputs.eks_cluster }}
                   ENVIRONMENT: ${{ steps.env.outputs.environment }}
+                  NAMESPACE: ${{ steps.env.outputs.namespace }}
               run: |
                   # Update kubeconfig
                   aws eks update-kubeconfig --region $AWS_REGION --name $EKS_CLUSTER
@@ -181,21 +180,23 @@ jobs:
                   kubectl apply -k .
 
                   # Wait for deployments
-                  kubectl wait --for=condition=available --timeout=600s deployment/backend-app -n ecommerce-vti
-                  kubectl wait --for=condition=available --timeout=600s deployment/frontend-app -n ecommerce-vti
-                  kubectl wait --for=condition=available --timeout=600s deployment/horizon-worker -n ecommerce-vti
-                  kubectl wait --for=condition=available --timeout=600s deployment/scheduler-worker -n ecommerce-vti
+                  kubectl wait --for=condition=available --timeout=600s deployment/backend-app -n $NAMESPACE
+                  kubectl wait --for=condition=available --timeout=600s deployment/frontend-app -n $NAMESPACE
+                  kubectl wait --for=condition=available --timeout=600s deployment/horizon-worker -n $NAMESPACE
+                  kubectl wait --for=condition=available --timeout=600s deployment/scheduler-worker -n $NAMESPACE
 
             - name: Deployment summary
               env:
                   ENVIRONMENT: ${{ steps.env.outputs.environment }}
+                  NAMESPACE: ${{ steps.env.outputs.namespace }}
               run: |
                   echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
                   echo "- **Environment:** $ENVIRONMENT" >> $GITHUB_STEP_SUMMARY
+                  echo "- **Namespace:** $NAMESPACE" >> $GITHUB_STEP_SUMMARY
                   echo "- **Commit SHA:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
                   echo "- **Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
                   echo "" >> $GITHUB_STEP_SUMMARY
                   echo "### 📊 Application Status" >> $GITHUB_STEP_SUMMARY
                   echo '```' >> $GITHUB_STEP_SUMMARY
-                  kubectl get pods -n ecommerce-vti >> $GITHUB_STEP_SUMMARY
+                  kubectl get pods -n $NAMESPACE >> $GITHUB_STEP_SUMMARY
                   echo '```' >> $GITHUB_STEP_SUMMARY
