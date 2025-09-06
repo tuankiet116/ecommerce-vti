@@ -1,0 +1,53 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: ecommerce-vti
+
+resources:
+    - ../../base/namespace.yaml
+    - ../../base/serviceaccount.yaml
+    - ../../base/configmap.yaml
+    - ../../base/external-secrets.yaml
+    - ../../base/backend-deployment.yaml
+    - ../../base/workers-deployment.yaml
+    - ../../base/frontend-deployment.yaml
+    - ../../base/ingress.yaml
+
+patches:
+    - target:
+          kind: Deployment
+          name: backend-app
+      patch: |-
+          - op: replace
+            path: /spec/replicas
+            value: 3
+          - op: replace
+            path: /spec/template/spec/containers/0/image
+            value: 234139188789.dkr.ecr.us-east-1.amazonaws.com/de000079-ecr-repo-prod:backend-latest
+
+    - target:
+          kind: Deployment
+          name: horizon-worker
+      patch: |-
+          - op: replace
+            path: /spec/template/spec/containers/0/image
+            value: 234139188789.dkr.ecr.us-east-1.amazonaws.com/de000079-ecr-repo-prod:horizon-latest
+
+    - target:
+          kind: Deployment
+          name: scheduler-worker
+      patch: |-
+          - op: replace
+            path: /spec/template/spec/containers/0/image
+            value: 234139188789.dkr.ecr.us-east-1.amazonaws.com/de000079-ecr-repo-prod:scheduler-latest
+
+    - target:
+          kind: Deployment
+          name: frontend-app
+      patch: |-
+          - op: replace
+            path: /spec/replicas
+            value: 3
+          - op: replace
+            path: /spec/template/spec/containers/0/image
+            value: 234139188789.dkr.ecr.us-east-1.amazonaws.com/de000079-ecr-repo-prod:frontend-latest
