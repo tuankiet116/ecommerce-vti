@@ -41,14 +41,20 @@ jobs:
                   node-version: "20"
 
             - name: Enable pnpm
+              working-directory: ./frontend
               run: corepack enable pnpm
 
-            - name: Cache frontend dependencies
+            - name: Get pnpm store directory
+              id: pnpm-cache
+              working-directory: ./frontend
+              run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+            - name: Cache pnpm store
               uses: actions/cache@v3
               with:
-                  path: frontend/node_modules
-                  key: ${{ runner.os }}-pnpm-${{ hashFiles('frontend/pnpm-lock.yaml') }}
-                  restore-keys: ${{ runner.os }}-pnpm-
+                  path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+                  key: ${{ runner.os }}-pnpm-store-${{ hashFiles('frontend/pnpm-lock.yaml') }}
+                  restore-keys: ${{ runner.os }}-pnpm-store-
 
             - name: Install frontend dependencies
               working-directory: ./frontend

@@ -1,8 +1,8 @@
 # Multi-stage Dockerfile for Next.js Frontend
 FROM node:20-alpine AS deps
 WORKDIR /app
-COPY ./frontend/package*.json ./
-COPY ./frontend/pnpm-lock.yaml* ./
+COPY ./frontend/package.json ./
+COPY ./frontend/pnpm-lock.yaml ./
 RUN corepack enable pnpm && pnpm install --frozen-lockfile
 
 FROM node:20-alpine AS builder
