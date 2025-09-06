@@ -19,72 +19,23 @@ spec:
             containers:
                 - name: horizon
                   image: "HORIZON_IMAGE"
+                  envFrom:
+                      # Load ALL secrets from AWS Secrets Manager
+                      - secretRef:
+                            name: backend-secrets
+                      # Load basic config from ConfigMap
+                      - configMapRef:
+                            name: backend-config
                   env:
-                      - name: APP_ENV
-                        valueFrom:
-                            configMapKeyRef:
-                                name: backend-config
-                                key: APP_ENV
-                      - name: APP_DEBUG
-                        valueFrom:
-                            configMapKeyRef:
-                                name: backend-config
-                                key: APP_DEBUG
-                      - name: LOG_CHANNEL
-                        valueFrom:
-                            configMapKeyRef:
-                                name: backend-config
-                                key: LOG_CHANNEL
-                      - name: DB_CONNECTION
-                        valueFrom:
-                            configMapKeyRef:
-                                name: backend-config
-                                key: DB_CONNECTION
-                      - name: CACHE_DRIVER
-                        valueFrom:
-                            configMapKeyRef:
-                                name: backend-config
-                                key: CACHE_DRIVER
-                      - name: QUEUE_CONNECTION
-                        valueFrom:
-                            configMapKeyRef:
-                                name: backend-config
-                                key: QUEUE_CONNECTION
-                      - name: SESSION_DRIVER
-                        valueFrom:
-                            configMapKeyRef:
-                                name: backend-config
-                                key: SESSION_DRIVER
-                      - name: APP_KEY
-                        valueFrom:
-                            secretKeyRef:
-                                name: backend-secrets
-                                key: APP_KEY
+                      # Override with K8s internal services
                       - name: DB_HOST
-                        valueFrom:
-                            secretKeyRef:
-                                name: backend-secrets
-                                key: DB_HOST
-                      - name: DB_DATABASE
-                        valueFrom:
-                            secretKeyRef:
-                                name: backend-secrets
-                                key: DB_DATABASE
-                      - name: DB_USERNAME
-                        valueFrom:
-                            secretKeyRef:
-                                name: backend-secrets
-                                key: DB_USERNAME
-                      - name: DB_PASSWORD
-                        valueFrom:
-                            secretKeyRef:
-                                name: backend-secrets
-                                key: DB_PASSWORD
+                        value: "postgres-service.ecommerce-vti.svc.cluster.local"
+                      - name: DB_PORT
+                        value: "5432"
                       - name: REDIS_HOST
-                        valueFrom:
-                            secretKeyRef:
-                                name: backend-secrets
-                                key: REDIS_HOST
+                        value: "redis-service.ecommerce-vti.svc.cluster.local"
+                      - name: REDIS_PORT
+                        value: "6379"
                   resources:
                       requests:
                           memory: "256Mi"
@@ -114,72 +65,23 @@ spec:
             containers:
                 - name: scheduler
                   image: "SCHEDULER_IMAGE"
+                  envFrom:
+                      # Load ALL secrets from AWS Secrets Manager
+                      - secretRef:
+                            name: backend-secrets
+                      # Load basic config from ConfigMap
+                      - configMapRef:
+                            name: backend-config
                   env:
-                      - name: APP_ENV
-                        valueFrom:
-                            configMapKeyRef:
-                                name: backend-config
-                                key: APP_ENV
-                      - name: APP_DEBUG
-                        valueFrom:
-                            configMapKeyRef:
-                                name: backend-config
-                                key: APP_DEBUG
-                      - name: LOG_CHANNEL
-                        valueFrom:
-                            configMapKeyRef:
-                                name: backend-config
-                                key: LOG_CHANNEL
-                      - name: DB_CONNECTION
-                        valueFrom:
-                            configMapKeyRef:
-                                name: backend-config
-                                key: DB_CONNECTION
-                      - name: CACHE_DRIVER
-                        valueFrom:
-                            configMapKeyRef:
-                                name: backend-config
-                                key: CACHE_DRIVER
-                      - name: QUEUE_CONNECTION
-                        valueFrom:
-                            configMapKeyRef:
-                                name: backend-config
-                                key: QUEUE_CONNECTION
-                      - name: SESSION_DRIVER
-                        valueFrom:
-                            configMapKeyRef:
-                                name: backend-config
-                                key: SESSION_DRIVER
-                      - name: APP_KEY
-                        valueFrom:
-                            secretKeyRef:
-                                name: backend-secrets
-                                key: APP_KEY
+                      # Override with K8s internal services
                       - name: DB_HOST
-                        valueFrom:
-                            secretKeyRef:
-                                name: backend-secrets
-                                key: DB_HOST
-                      - name: DB_DATABASE
-                        valueFrom:
-                            secretKeyRef:
-                                name: backend-secrets
-                                key: DB_DATABASE
-                      - name: DB_USERNAME
-                        valueFrom:
-                            secretKeyRef:
-                                name: backend-secrets
-                                key: DB_USERNAME
-                      - name: DB_PASSWORD
-                        valueFrom:
-                            secretKeyRef:
-                                name: backend-secrets
-                                key: DB_PASSWORD
+                        value: "postgres-service.ecommerce-vti.svc.cluster.local"
+                      - name: DB_PORT
+                        value: "5432"
                       - name: REDIS_HOST
-                        valueFrom:
-                            secretKeyRef:
-                                name: backend-secrets
-                                key: REDIS_HOST
+                        value: "redis-service.ecommerce-vti.svc.cluster.local"
+                      - name: REDIS_PORT
+                        value: "6379"
                   resources:
                       requests:
                           memory: "128Mi"

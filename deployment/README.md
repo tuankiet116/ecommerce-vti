@@ -72,20 +72,41 @@ deployment/
 2. **Configure AWS Secrets Manager**:
    Create secrets in AWS Secrets Manager with the following structure:
 
-    **Backend Secrets** (`ecommerce-vti/backend/{env}`):
+### **AWS Secrets Configuration:**
 
-    ```json
-    {
-        "APP_KEY": "base64:your-app-key",
-        "DB_HOST": "your-database-host",
-        "DB_DATABASE": "your-database-name",
-        "DB_USERNAME": "your-database-user",
-        "DB_PASSWORD": "your-database-password",
-        "REDIS_HOST": "your-redis-host"
-    }
-    ```
+**Development:**
 
-    **Frontend Secrets** (`ecommerce-vti/frontend/{env}`):
+```bash
+aws secretsmanager create-secret
+  --name "ecommerce-vti/backend/dev"
+  --secret-string '{
+    "APP_KEY": "base64:your-dev-key",
+    "MAIL_MAILER": "smtp",
+    "MAIL_HOST": "smtp.gmail.com",
+    "MAIL_PORT": "587",
+    "MAIL_USERNAME": "your-email@gmail.com",
+    "MAIL_PASSWORD": "your-app-password",
+    "MAIL_FROM_ADDRESS": "noreply@ecommerce-vti.dev",
+    "MAIL_FROM_NAME": "E-commerce VTI Dev"
+  }'
+```
+
+**Production:**
+
+````bash
+aws secretsmanager create-secret
+  --name "ecommerce-vti/backend/prod"
+  --secret-string '{
+    "APP_KEY": "base64:your-prod-key",
+    "MAIL_MAILER": "smtp",
+    "MAIL_HOST": "smtp.gmail.com",
+    "MAIL_PORT": "587",
+    "MAIL_USERNAME": "your-email@gmail.com",
+    "MAIL_PASSWORD": "your-app-password",
+    "MAIL_FROM_ADDRESS": "noreply@ecommerce-vti.com",
+    "MAIL_FROM_NAME": "E-commerce VTI"
+  }'
+```    **Frontend Secrets** (`ecommerce-vti/frontend/{env}`):
 
     ```json
     {
@@ -250,17 +271,20 @@ kubectl set image deployment/backend-app backend=new-image -n ecommerce-vti
 
 # Port forward for local testing
 kubectl port-forward service/frontend-service 3000:3000 -n ecommerce-vti
-```
+````
 
 ## 🔄 Environment Differences
 
-| Feature    | Development                   | Production                |
-| ---------- | ----------------------------- | ------------------------- |
-| Replicas   | 1 each                        | 3 each                    |
-| Resources  | Lower limits                  | Higher limits             |
-| Secrets    | dev namespace                 | prod namespace            |
-| Domain     | dev.ecommerce-vti.example.com | ecommerce-vti.example.com |
-| Monitoring | Basic                         | Enhanced                  |
+| Feature           | Development                   | Production                 |
+| ----------------- | ----------------------------- | -------------------------- |
+| Replicas          | 1 each                        | 3 each                     |
+| Resources         | Lower limits                  | Higher limits              |
+| Secrets           | dev namespace                 | prod namespace             |
+| Domain            | dev.ecommerce-vti.example.com | ecommerce-vti.example.com  |
+| Database          | postgres-dev (256Mi/250m)     | postgres-prod (512Mi/500m) |
+| Redis             | redis-dev (128Mi/100m)        | redis-prod (256Mi/200m)    |
+| Database Password | devpassword123                | prodpassword123            |
+| Database Name     | ecommerce_vti_dev             | ecommerce_vti_prod         |
 
 ## 📝 Environment Variables
 

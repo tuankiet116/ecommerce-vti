@@ -78,14 +78,6 @@ local-down: ## Stop local development environment
 	@echo "🏠 Stopping local development environment..."
 	@docker-compose down
 
-local-prod: ## Start local production-like environment
-	@echo "🏭 Starting local production environment..."
-	@docker-compose -f deployment/docker-compose.prod.yml up -d
-
-local-prod-down: ## Stop local production environment
-	@echo "🏭 Stopping local production environment..."
-	@docker-compose -f deployment/docker-compose.prod.yml down
-
 # Testing commands
 test: ## Run all tests
 	@echo "🧪 Running tests..."

@@ -1,0 +1,143 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: postgres-dev
+    namespace: ecommerce-vti
+    labels:
+        app: postgres-dev
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app: postgres-dev
+    template:
+        metadata:
+            labels:
+                app: postgres-dev
+        spec:
+            containers:
+                - name: postgres
+                  image: postgres:16
+                  env:
+                      - name: POSTGRES_DB
+                        value: ecommerce_vti_dev
+                      - name: POSTGRES_USER
+                        value: postgres
+                      - name: POSTGRES_PASSWORD
+                        value: devpassword123
+                      - name: PGDATA
+                        value: /var/lib/postgresql/data/pgdata
+                  ports:
+                      - containerPort: 5432
+                  volumeMounts:
+                      - name: postgres-storage
+                        mountPath: /var/lib/postgresql/data
+                  resources:
+                      requests:
+                          memory: "256Mi"
+                          cpu: "250m"
+                      limits:
+                          memory: "512Mi"
+                          cpu: "500m"
+                  livenessProbe:
+                      exec:
+                          command:
+                              - pg_isready
+                              - -U
+                              - postgres
+                      initialDelaySeconds: 30
+                      periodSeconds: 10
+                  readinessProbe:
+                      exec:
+                          command:
+                              - pg_isready
+                              - -U
+                              - postgres
+                      initialDelaySeconds: 5
+                      periodSeconds: 5
+            volumes:
+                - name: postgres-storage
+                  emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: postgres-service
+    namespace: ecommerce-vti
+    labels:
+        app: postgres-dev
+spec:
+    selector:
+        app: postgres-dev
+    ports:
+        - protocol: TCP
+          port: 5432
+          targetPort: 5432
+    type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: redis-dev
+    namespace: ecommerce-vti
+    labels:
+        app: redis-dev
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app: redis-dev
+    template:
+        metadata:
+            labels:
+                app: redis-dev
+        spec:
+            containers:
+                - name: redis
+                  image: redis:7-alpine
+                  command: ["redis-server", "--appendonly", "yes"]
+                  ports:
+                      - containerPort: 6379
+                  volumeMounts:
+                      - name: redis-storage
+                        mountPath: /data
+                  resources:
+                      requests:
+                          memory: "128Mi"
+                          cpu: "100m"
+                      limits:
+                          memory: "256Mi"
+                          cpu: "200m"
+                  livenessProbe:
+                      exec:
+                          command:
+                              - redis-cli
+                              - ping
+                      initialDelaySeconds: 30
+                      periodSeconds: 10
+                  readinessProbe:
+                      exec:
+                          command:
+                              - redis-cli
+                              - ping
+                      initialDelaySeconds: 5
+                      periodSeconds: 5
+            volumes:
+                - name: redis-storage
+                  emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: redis-service
+    namespace: ecommerce-vti
+    labels:
+        app: redis-dev
+spec:
+    selector:
+        app: redis-dev
+    ports:
+        - protocol: TCP
+          port: 6379
+          targetPort: 6379
+    type: ClusterIP

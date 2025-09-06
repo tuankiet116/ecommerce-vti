@@ -8,49 +8,48 @@ resources:
     - ../../base/serviceaccount.yaml
     - ../../base/configmap.yaml
     - ../../base/external-secrets.yaml
+    - ../../base/database-services.yaml
     - ../../base/backend-deployment.yaml
     - ../../base/workers-deployment.yaml
     - ../../base/frontend-deployment.yaml
-    - ../../base/ingress.yaml
+    - ../../base/ingress.yamlpatches:
+          - target:
+                kind: Deployment
+                name: backend-app
+            patch: |-
+                - op: replace
+                  path: /spec/replicas
+                  value: 1
+                - op: replace
+                  path: /spec/template/spec/containers/0/image
+                  value: 234139188789.dkr.ecr.us-east-1.amazonaws.com/de000079-ecr-repo-dev:backend-latest
 
-patches:
-    - target:
-          kind: Deployment
-          name: backend-app
-      patch: |-
-          - op: replace
-            path: /spec/replicas
-            value: 1
-          - op: replace
-            path: /spec/template/spec/containers/0/image
-            value: 234139188789.dkr.ecr.us-east-1.amazonaws.com/de000079-ecr-repo-dev:backend-latest
+          - target:
+                kind: Deployment
+                name: horizon-worker
+            patch: |-
+                - op: replace
+                  path: /spec/template/spec/containers/0/image
+                  value: 234139188789.dkr.ecr.us-east-1.amazonaws.com/de000079-ecr-repo-dev:horizon-latest
 
-    - target:
-          kind: Deployment
-          name: horizon-worker
-      patch: |-
-          - op: replace
-            path: /spec/template/spec/containers/0/image
-            value: 234139188789.dkr.ecr.us-east-1.amazonaws.com/de000079-ecr-repo-dev:horizon-latest
+          - target:
+                kind: Deployment
+                name: scheduler-worker
+            patch: |-
+                - op: replace
+                  path: /spec/template/spec/containers/0/image
+                  value: 234139188789.dkr.ecr.us-east-1.amazonaws.com/de000079-ecr-repo-dev:scheduler-latest
 
-    - target:
-          kind: Deployment
-          name: scheduler-worker
-      patch: |-
-          - op: replace
-            path: /spec/template/spec/containers/0/image
-            value: 234139188789.dkr.ecr.us-east-1.amazonaws.com/de000079-ecr-repo-dev:scheduler-latest
-
-    - target:
-          kind: Deployment
-          name: frontend-app
-      patch: |-
-          - op: replace
-            path: /spec/replicas
-            value: 1
-          - op: replace
-            path: /spec/template/spec/containers/0/image
-            value: 234139188789.dkr.ecr.us-east-1.amazonaws.com/de000079-ecr-repo-dev:frontend-latest
+          - target:
+                kind: Deployment
+                name: frontend-app
+            patch: |-
+                - op: replace
+                  path: /spec/replicas
+                  value: 1
+                - op: replace
+                  path: /spec/template/spec/containers/0/image
+                  value: 234139188789.dkr.ecr.us-east-1.amazonaws.com/de000079-ecr-repo-dev:frontend-latest
 
 replacements:
     - source:
