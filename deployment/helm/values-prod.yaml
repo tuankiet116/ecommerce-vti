@@ -2,85 +2,85 @@
 
 # Override environment
 app:
-  environment: production
+    environment: production
 
 # Production image repository
 image:
-  repository: de000079-ecr-repo-prod
+    repository: de000079-ecr-repo-prod
 
 # Production scaling (reduced for cluster capacity)
 backend:
-  replicaCount: 1  # Reduced from 3
-  resources:
-    limits:
-      cpu: 200m
-      memory: 256Mi
-    requests:
-      cpu: 100m
-      memory: 128Mi
+    replicaCount: 1 # Reduced from 3
+    resources:
+        limits:
+            cpu: 200m
+            memory: 256Mi
+        requests:
+            cpu: 100m
+            memory: 128Mi
 
 frontend:
-  replicaCount: 1  # Reduced from 3
-  resources:
-    limits:
-      cpu: 200m
-      memory: 256Mi
-    requests:
-      cpu: 100m
-      memory: 128Mi
+    replicaCount: 1 # Reduced from 3
+    resources:
+        limits:
+            cpu: 200m
+            memory: 256Mi
+        requests:
+            cpu: 100m
+            memory: 128Mi
 
 horizon:
-  replicaCount: 1  # Reduced from 2
-  resources:
-    limits:
-      cpu: 100m
-      memory: 128Mi
-    requests:
-      cpu: 50m
-      memory: 64Mi
+    replicaCount: 1 # Reduced from 2
+    resources:
+        limits:
+            cpu: 100m
+            memory: 128Mi
+        requests:
+            cpu: 50m
+            memory: 64Mi
 
 # Production database (reduced resources)
 postgresql:
-  env:
-    POSTGRES_DB: ecommerce_vti_prod
-    POSTGRES_PASSWORD: prodpassword123
-  resources:
-    limits:
-      cpu: 200m
-      memory: 256Mi
-    requests:
-      cpu: 100m
-      memory: 128Mi
-  persistence:
-    size: 20Gi  # Reduced from 50Gi
+    env:
+        POSTGRES_DB: ecommerce_vti_prod
+        POSTGRES_PASSWORD: prodpassword123
+    resources:
+        limits:
+            cpu: 200m
+            memory: 256Mi
+        requests:
+            cpu: 100m
+            memory: 128Mi
+    persistence:
+        size: 20Gi # Reduced from 50Gi
 
 # Production Redis (reduced resources)
 redis:
-  resources:
-    limits:
-      cpu: 100m
-      memory: 128Mi
-    requests:
-      cpu: 50m
-      memory: 64Mi
+    resources:
+        limits:
+            cpu: 100m
+            memory: 128Mi
+        requests:
+            cpu: 50m
+            memory: 64Mi
 
 # Production External Secrets
 externalSecrets:
-  backend:
-    awsSecretName: DE000079-ecommerce-vti-backend-prod
-  frontend:
-    awsSecretName: DE000079-ecommerce-vti-frontend-prod
-  secretStore:
-    roleArn: arn:aws:iam::234139188789:role/external-secrets-prod-role
+    backend:
+        awsSecretName: DE000079-ecommerce-vti-backend-prod
+    frontend:
+        awsSecretName: DE000079-ecommerce-vti-frontend-prod
+    secretStore:
+        roleArn: arn:aws:iam::234139188789:role/external-secrets-prod-role
 
 # Production Service Account
 serviceAccount:
-  annotations:
-    eks.amazonaws.com/role-arn: arn:aws:iam::234139188789:role/external-secrets-prod-role
+    annotations:
+        eks.amazonaws.com/role-arn: arn:aws:iam::234139188789:role/external-secrets-prod-role
 
 # Production ConfigMap
 configMap:
-  backend:
-    APP_ENV: production
-    APP_DEBUG: "false"
-    DB_DATABASE: ecommerce_vti_prod
+    backend:
+        APP_ENV: production
+        APP_DEBUG: "false"
+        DB_DATABASE: ecommerce_vti_prod

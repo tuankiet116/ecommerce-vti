@@ -119,7 +119,7 @@ jobs:
             - name: Setup Helm
               uses: azure/setup-helm@v4
               with:
-                  version: 'v3.12.0'
+                  version: "v3.12.0"
 
             - name: Setup Kubernetes and External Secrets
               env:
@@ -299,23 +299,23 @@ jobs:
                   echo "- **Commit SHA:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
                   echo "- **Helm Release:** ecommerce-vti" >> $GITHUB_STEP_SUMMARY
                   echo "" >> $GITHUB_STEP_SUMMARY
-                  
+
                   echo "### 📊 Application Status" >> $GITHUB_STEP_SUMMARY
                   echo '```' >> $GITHUB_STEP_SUMMARY
                   kubectl get pods -n $NAMESPACE >> $GITHUB_STEP_SUMMARY
                   echo '```' >> $GITHUB_STEP_SUMMARY
                   echo "" >> $GITHUB_STEP_SUMMARY
-                  
+
                   echo "### 🎯 Helm Release Info" >> $GITHUB_STEP_SUMMARY
                   echo '```' >> $GITHUB_STEP_SUMMARY
                   helm list -n $NAMESPACE >> $GITHUB_STEP_SUMMARY
                   echo '```' >> $GITHUB_STEP_SUMMARY
                   echo "" >> $GITHUB_STEP_SUMMARY
-                  
+
                   echo "### 🌐 Access URLs (No Domain Required)" >> $GITHUB_STEP_SUMMARY
                   echo "Wait a few minutes for Load Balancers to provision, then:" >> $GITHUB_STEP_SUMMARY
                   echo "" >> $GITHUB_STEP_SUMMARY
-                  
+
                   # Get Load Balancer URLs
                   echo "**Frontend Application:**" >> $GITHUB_STEP_SUMMARY
                   FRONTEND_LB=$(kubectl get service frontend-loadbalancer -n $NAMESPACE -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "Provisioning...")
@@ -326,7 +326,7 @@ jobs:
                     echo "  Run: \`kubectl get service frontend-loadbalancer -n $NAMESPACE\`" >> $GITHUB_STEP_SUMMARY
                   fi
                   echo "" >> $GITHUB_STEP_SUMMARY
-                  
+
                   echo "**Backend API:**" >> $GITHUB_STEP_SUMMARY
                   BACKEND_LB=$(kubectl get service backend-loadbalancer -n $NAMESPACE -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "Provisioning...")
                   if [ "$BACKEND_LB" != "Provisioning..." ] && [ ! -z "$BACKEND_LB" ]; then
@@ -339,7 +339,7 @@ jobs:
                     echo "  Run: \`kubectl get service backend-loadbalancer -n $NAMESPACE\`" >> $GITHUB_STEP_SUMMARY
                   fi
                   echo "" >> $GITHUB_STEP_SUMMARY
-                  
+
                   echo "### 📋 Manual Commands to Get URLs" >> $GITHUB_STEP_SUMMARY
                   echo '```bash' >> $GITHUB_STEP_SUMMARY
                   echo "# Get Frontend URL" >> $GITHUB_STEP_SUMMARY
