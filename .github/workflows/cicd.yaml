@@ -229,7 +229,7 @@ jobs:
 
                   # Deploy application
                   cd deployment/k8s
-                  kubectl apply -k environments/$ENVIRONMENT --load-restrictor=LoadRestrictionsNone
+                  kubectl kustomize environments/$ENVIRONMENT --load-restrictor=LoadRestrictionsNone | kubectl apply -f -
 
                   # Wait for deployments
                   kubectl wait --for=condition=available --timeout=600s deployment/backend-app -n $NAMESPACE
