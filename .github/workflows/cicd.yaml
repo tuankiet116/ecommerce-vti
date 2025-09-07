@@ -244,8 +244,8 @@ jobs:
                     --set image.tag=$IMAGE_TAG \
                     --set image.repository=$ECR_REPOSITORY \
                     --set namespace.name=$NAMESPACE \
-                    --set external_secrets.backend_secret_name=$BACKEND_SECRET_NAME \
-                    --set external_secrets.frontend_secret_name=$FRONTEND_SECRET_NAME \
+                    --set externalSecrets.backend.awsSecretName=$BACKEND_SECRET_NAME \
+                    --set externalSecrets.frontend.awsSecretName=$FRONTEND_SECRET_NAME \
                     --debug > /tmp/helm-template-output.yaml
 
                   echo "Generated templates preview (first 50 lines):"
@@ -261,8 +261,8 @@ jobs:
                     --set image.tag=$IMAGE_TAG \
                     --set image.repository=$ECR_REPOSITORY \
                     --set namespace.name=$NAMESPACE \
-                    --set external_secrets.backend_secret_name=$BACKEND_SECRET_NAME \
-                    --set external_secrets.frontend_secret_name=$FRONTEND_SECRET_NAME \
+                    --set externalSecrets.backend.awsSecretName=$BACKEND_SECRET_NAME \
+                    --set externalSecrets.frontend.awsSecretName=$FRONTEND_SECRET_NAME \
                     --wait \
                     --timeout=10m \
                     --debug; then

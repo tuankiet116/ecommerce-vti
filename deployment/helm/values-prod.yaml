@@ -8,61 +8,61 @@ app:
 image:
   repository: de000079-ecr-repo-prod
 
-# Production scaling
+# Production scaling (reduced for cluster capacity)
 backend:
-  replicaCount: 3
+  replicaCount: 1  # Reduced from 3
   resources:
     limits:
-      cpu: 1000m
-      memory: 1Gi
+      cpu: 200m
+      memory: 256Mi
     requests:
-      cpu: 500m
-      memory: 512Mi
+      cpu: 100m
+      memory: 128Mi
 
 frontend:
-  replicaCount: 3
+  replicaCount: 1  # Reduced from 3
   resources:
     limits:
-      cpu: 1000m
-      memory: 1Gi
+      cpu: 200m
+      memory: 256Mi
     requests:
-      cpu: 500m
-      memory: 512Mi
+      cpu: 100m
+      memory: 128Mi
 
 horizon:
-  replicaCount: 2
+  replicaCount: 1  # Reduced from 2
   resources:
     limits:
-      cpu: 500m
-      memory: 512Mi
+      cpu: 100m
+      memory: 128Mi
     requests:
-      cpu: 250m
-      memory: 256Mi
+      cpu: 50m
+      memory: 64Mi
 
-# Production database
+# Production database (reduced resources)
 postgresql:
   env:
     POSTGRES_DB: ecommerce_vti_prod
     POSTGRES_PASSWORD: prodpassword123
   resources:
     limits:
-      cpu: 1000m
-      memory: 1Gi
+      cpu: 200m
+      memory: 256Mi
     requests:
-      cpu: 500m
-      memory: 512Mi
+      cpu: 100m
+      memory: 128Mi
   persistence:
-    size: 50Gi
+    size: 20Gi  # Reduced from 50Gi
 
-# Production Redis
+# Production Redis (reduced resources)
 redis:
   resources:
     limits:
-      cpu: 500m
-      memory: 512Mi
+      cpu: 100m
+      memory: 128Mi
     requests:
-      cpu: 250m
-      memory: 256Mi
+      cpu: 50m
+      memory: 64Mi
 
 # Production External Secrets
 externalSecrets:
