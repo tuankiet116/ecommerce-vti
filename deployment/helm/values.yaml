@@ -1,12 +1,5 @@
-# Default values for ecommer    targetPort: 8000
-  resources:
-    limits:
-      cpu: 200m
-      memory: 256Mi
-    requests:
-      cpu: 100m
-      memory: 128Mi
-  # HTTP health checks for Laravel serveThis is a YAML-formatted file.
+# Default values for ecommerce-vti
+# This is a YAML-formatted file.
 
 global:
   imageRegistry: ""
