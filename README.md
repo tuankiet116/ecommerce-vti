@@ -134,3 +134,53 @@ php artisan key:generate
 - For manual setup, ensure PHP, Composer, Node.js, PostgreSQL, and Redis are installed and running.
 
 ---
+
+## 🌐 Application Access
+
+### Local Development
+- **Backend API**: `http://localhost:8000` (or `http://localhost:8888` with Docker)
+- **Admin Panel**: `http://localhost:8000/admin`
+- **Frontend**: `http://localhost:3000`
+- **API Documentation**: `http://localhost:8000/docs`
+- **Horizon Dashboard**: `http://localhost:8000/horizon`
+- **Log Viewer**: `http://localhost:8000/log-viewer`
+
+### Production (AWS EKS - Real URLs, No Domain Required)
+After deployment, applications are accessible via **real AWS Load Balancer URLs**:
+
+#### 🎯 Get Your Real Application URLs
+```bash
+# Quick way - Use our helper script to get REAL URLs
+./scripts/get-app-urls.sh prod        # Production URLs
+./scripts/get-app-urls.sh dev         # Development URLs
+
+# Manual way - Get Real Load Balancer URLs
+kubectl get service frontend-loadbalancer -n ecommerce-vti-prod
+kubectl get service backend-loadbalancer -n ecommerce-vti-prod
+```
+
+#### 🌐 Real Production Access Points
+You'll get URLs like these (examples):
+- **Frontend**: `http://a1b2c3d4e5f6-123456789.ap-southeast-2.elb.amazonaws.com`
+- **API**: `http://a7b8c9d0e1f2-987654321.ap-southeast-2.elb.amazonaws.com`
+- **API Docs**: `http://a7b8c9d0e1f2-987654321.ap-southeast-2.elb.amazonaws.com/docs`
+- **Admin Panel**: `http://a7b8c9d0e1f2-987654321.ap-southeast-2.elb.amazonaws.com/admin`
+- **Horizon**: `http://a7b8c9d0e1f2-987654321.ap-southeast-2.elb.amazonaws.com/horizon`
+
+> 💡 **AWS tự động tạo URL**: Sau khi deploy, AWS sẽ tự động tạo URL thực tế cho bạn!
+
+#### Alternative Access (Port Forwarding)
+If Load Balancers are not ready or for testing:
+```bash
+# Frontend
+kubectl port-forward service/frontend-service 3000:3000 -n ecommerce-vti-prod
+# Then access: http://localhost:3000
+
+# Backend
+kubectl port-forward service/backend-service 8000:9000 -n ecommerce-vti-prod  
+# Then access: http://localhost:8000
+```
+
+**⏳ Note**: Load Balancers typically take 3-5 minutes to provision after first deployment.
+
+---

@@ -192,7 +192,7 @@ configMap:
     NODE_ENV: production
     NEXT_TELEMETRY_DISABLED: "1"
 
-# Load Balancer Services
+# Load Balancer Services (No domain required)
 loadBalancer:
   enabled: true
   backend:
@@ -202,6 +202,8 @@ loadBalancer:
     annotations:
       service.beta.kubernetes.io/aws-load-balancer-type: nlb
       service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+      service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+      service.beta.kubernetes.io/aws-load-balancer-attributes: idle_timeout.idle_timeout_seconds=60
   frontend:
     type: LoadBalancer
     port: 80
@@ -209,6 +211,22 @@ loadBalancer:
     annotations:
       service.beta.kubernetes.io/aws-load-balancer-type: nlb
       service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+      service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+      service.beta.kubernetes.io/aws-load-balancer-attributes: idle_timeout.idle_timeout_seconds=60
+
+# Alternative: NodePort Services (for direct access without Load Balancer)
+nodePort:
+  enabled: false  # Set to true if you prefer NodePort over LoadBalancer
+  backend:
+    type: NodePort
+    port: 80
+    targetPort: 9000
+    nodePort: 30080  # Access via <node-ip>:30080
+  frontend:
+    type: NodePort
+    port: 80
+    targetPort: 3000
+    nodePort: 30090  # Access via <node-ip>:30090
 
 # Namespace
 namespace:

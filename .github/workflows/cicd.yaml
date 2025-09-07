@@ -73,9 +73,13 @@ jobs:
                   if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
                     echo "environment=prod" >> $GITHUB_OUTPUT
                     echo "namespace=ecommerce-vti-prod" >> $GITHUB_OUTPUT
+                    echo "backend_secret_name=${{ secrets.BACKEND_SECRET_NAME }}" >> $GITHUB_OUTPUT
+                    echo "frontend_secret_name=${{ secrets.FRONTEND_SECRET_NAME }}" >> $GITHUB_OUTPUT
                   else
                     echo "environment=dev" >> $GITHUB_OUTPUT
                     echo "namespace=ecommerce-vti-dev" >> $GITHUB_OUTPUT
+                    echo "backend_secret_name=${{ secrets.BACKEND_SECRET_NAME }}" >> $GITHUB_OUTPUT
+                    echo "frontend_secret_name=${{ secrets.FRONTEND_SECRET_NAME }}" >> $GITHUB_OUTPUT
                   fi
                   echo "aws_role_arn=${{ secrets.AWS_ROLE_ARN }}" >> $GITHUB_OUTPUT
                   echo "ecr_repository=${{ secrets.ECR_REPOSITORY }}" >> $GITHUB_OUTPUT
@@ -216,6 +220,8 @@ jobs:
                   IMAGE_TAG: ${{ github.sha }}
                   ENVIRONMENT: ${{ steps.env.outputs.environment }}
                   NAMESPACE: ${{ steps.env.outputs.namespace }}
+                  BACKEND_SECRET_NAME: ${{ steps.env.outputs.backend_secret_name }}
+                  FRONTEND_SECRET_NAME: ${{ steps.env.outputs.frontend_secret_name }}
               run: |
                   cd deployment/helm
 
@@ -238,6 +244,8 @@ jobs:
                     --set image.tag=$IMAGE_TAG \
                     --set image.repository=$ECR_REPOSITORY \
                     --set namespace.name=$NAMESPACE \
+                    --set external_secrets.backend_secret_name=$BACKEND_SECRET_NAME \
+                    --set external_secrets.frontend_secret_name=$FRONTEND_SECRET_NAME \
                     --debug > /tmp/helm-template-output.yaml
 
                   echo "Generated templates preview (first 50 lines):"
@@ -253,6 +261,8 @@ jobs:
                     --set image.tag=$IMAGE_TAG \
                     --set image.repository=$ECR_REPOSITORY \
                     --set namespace.name=$NAMESPACE \
+                    --set external_secrets.backend_secret_name=$BACKEND_SECRET_NAME \
+                    --set external_secrets.frontend_secret_name=$FRONTEND_SECRET_NAME \
                     --wait \
                     --timeout=10m \
                     --debug; then
@@ -299,4 +309,46 @@ jobs:
                   echo "### 🎯 Helm Release Info" >> $GITHUB_STEP_SUMMARY
                   echo '```' >> $GITHUB_STEP_SUMMARY
                   helm list -n $NAMESPACE >> $GITHUB_STEP_SUMMARY
+                  echo '```' >> $GITHUB_STEP_SUMMARY
+                  echo "" >> $GITHUB_STEP_SUMMARY
+                  
+                  echo "### 🌐 Access URLs (No Domain Required)" >> $GITHUB_STEP_SUMMARY
+                  echo "Wait a few minutes for Load Balancers to provision, then:" >> $GITHUB_STEP_SUMMARY
+                  echo "" >> $GITHUB_STEP_SUMMARY
+                  
+                  # Get Load Balancer URLs
+                  echo "**Frontend Application:**" >> $GITHUB_STEP_SUMMARY
+                  FRONTEND_LB=$(kubectl get service frontend-loadbalancer -n $NAMESPACE -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "Provisioning...")
+                  if [ "$FRONTEND_LB" != "Provisioning..." ] && [ ! -z "$FRONTEND_LB" ]; then
+                    echo "- Frontend: http://$FRONTEND_LB" >> $GITHUB_STEP_SUMMARY
+                  else
+                    echo "- Frontend: Load Balancer URL will be available in ~3-5 minutes" >> $GITHUB_STEP_SUMMARY
+                    echo "  Run: \`kubectl get service frontend-loadbalancer -n $NAMESPACE\`" >> $GITHUB_STEP_SUMMARY
+                  fi
+                  echo "" >> $GITHUB_STEP_SUMMARY
+                  
+                  echo "**Backend API:**" >> $GITHUB_STEP_SUMMARY
+                  BACKEND_LB=$(kubectl get service backend-loadbalancer -n $NAMESPACE -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "Provisioning...")
+                  if [ "$BACKEND_LB" != "Provisioning..." ] && [ ! -z "$BACKEND_LB" ]; then
+                    echo "- API: http://$BACKEND_LB" >> $GITHUB_STEP_SUMMARY
+                    echo "- API Docs: http://$BACKEND_LB/docs" >> $GITHUB_STEP_SUMMARY
+                    echo "- Admin Panel: http://$BACKEND_LB/admin" >> $GITHUB_STEP_SUMMARY
+                    echo "- Horizon: http://$BACKEND_LB/horizon" >> $GITHUB_STEP_SUMMARY
+                  else
+                    echo "- API: Load Balancer URL will be available in ~3-5 minutes" >> $GITHUB_STEP_SUMMARY
+                    echo "  Run: \`kubectl get service backend-loadbalancer -n $NAMESPACE\`" >> $GITHUB_STEP_SUMMARY
+                  fi
+                  echo "" >> $GITHUB_STEP_SUMMARY
+                  
+                  echo "### 📋 Manual Commands to Get URLs" >> $GITHUB_STEP_SUMMARY
+                  echo '```bash' >> $GITHUB_STEP_SUMMARY
+                  echo "# Get Frontend URL" >> $GITHUB_STEP_SUMMARY
+                  echo "kubectl get service frontend-loadbalancer -n $NAMESPACE" >> $GITHUB_STEP_SUMMARY
+                  echo "" >> $GITHUB_STEP_SUMMARY
+                  echo "# Get Backend URL" >> $GITHUB_STEP_SUMMARY
+                  echo "kubectl get service backend-loadbalancer -n $NAMESPACE" >> $GITHUB_STEP_SUMMARY
+                  echo "" >> $GITHUB_STEP_SUMMARY
+                  echo "# Alternative: Port forward for testing" >> $GITHUB_STEP_SUMMARY
+                  echo "kubectl port-forward service/frontend-service 3000:3000 -n $NAMESPACE" >> $GITHUB_STEP_SUMMARY
+                  echo "kubectl port-forward service/backend-service 8000:9000 -n $NAMESPACE" >> $GITHUB_STEP_SUMMARY
                   echo '```' >> $GITHUB_STEP_SUMMARY

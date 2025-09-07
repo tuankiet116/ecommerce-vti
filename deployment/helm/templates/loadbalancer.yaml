@@ -17,6 +17,7 @@ spec:
     - port: {{ .Values.loadBalancer.backend.port }}
       targetPort: {{ .Values.loadBalancer.backend.targetPort }}
       protocol: TCP
+      name: http
   selector:
     {{- include "ecommerce-vti.selectorLabels" . | nindent 4 }}
     app.kubernetes.io/component: backend
@@ -39,6 +40,50 @@ spec:
     - port: {{ .Values.loadBalancer.frontend.port }}
       targetPort: {{ .Values.loadBalancer.frontend.targetPort }}
       protocol: TCP
+      name: http
+  selector:
+    {{- include "ecommerce-vti.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: frontend
+{{- end }}
+
+{{- if .Values.nodePort.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-nodeport
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    {{- include "ecommerce-vti.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend-np
+spec:
+  type: {{ .Values.nodePort.backend.type }}
+  ports:
+    - port: {{ .Values.nodePort.backend.port }}
+      targetPort: {{ .Values.nodePort.backend.targetPort }}
+      nodePort: {{ .Values.nodePort.backend.nodePort }}
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "ecommerce-vti.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-nodeport
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    {{- include "ecommerce-vti.labels" . | nindent 4 }}
+    app.kubernetes.io/component: frontend-np
+spec:
+  type: {{ .Values.nodePort.frontend.type }}
+  ports:
+    - port: {{ .Values.nodePort.frontend.port }}
+      targetPort: {{ .Values.nodePort.frontend.targetPort }}
+      nodePort: {{ .Values.nodePort.frontend.nodePort }}
+      protocol: TCP
+      name: http
   selector:
     {{- include "ecommerce-vti.selectorLabels" . | nindent 4 }}
     app.kubernetes.io/component: frontend
