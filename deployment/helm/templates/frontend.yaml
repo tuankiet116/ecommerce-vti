@@ -32,10 +32,14 @@ spec:
                 name: frontend-config
             - secretRef:
                 name: {{ .Values.externalSecrets.frontend.secretName }}
+          {{- if .Values.frontend.livenessProbe }}
           livenessProbe:
             {{- toYaml .Values.frontend.livenessProbe | nindent 12 }}
+          {{- end }}
+          {{- if .Values.frontend.readinessProbe }}
           readinessProbe:
             {{- toYaml .Values.frontend.readinessProbe | nindent 12 }}
+          {{- end }}
           resources:
             {{- toYaml .Values.frontend.resources | nindent 12 }}
 ---

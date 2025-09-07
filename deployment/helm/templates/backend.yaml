@@ -32,10 +32,14 @@ spec:
                 name: backend-config
             - secretRef:
                 name: {{ .Values.externalSecrets.backend.secretName }}
+          {{- if .Values.backend.livenessProbe }}
           livenessProbe:
             {{- toYaml .Values.backend.livenessProbe | nindent 12 }}
+          {{- end }}
+          {{- if .Values.backend.readinessProbe }}
           readinessProbe:
             {{- toYaml .Values.backend.readinessProbe | nindent 12 }}
+          {{- end }}
           resources:
             {{- toYaml .Values.backend.resources | nindent 12 }}
 ---
