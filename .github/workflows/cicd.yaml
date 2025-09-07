@@ -154,32 +154,45 @@ jobs:
                   ENVIRONMENT: ${{ steps.env.outputs.environment }}
                   NAMESPACE: ${{ steps.env.outputs.namespace }}
               run: |
-                  # Update image tags in environment kustomization
-                  cd deployment/k8s/environments/$ENVIRONMENT
-                  sed -i "s|backend-latest|backend-$IMAGE_TAG|g" kustomization.yaml
-                  sed -i "s|horizon-latest|horizon-$IMAGE_TAG|g" kustomization.yaml
-                  sed -i "s|scheduler-latest|scheduler-$IMAGE_TAG|g" kustomization.yaml
-                  sed -i "s|frontend-latest|frontend-$IMAGE_TAG|g" kustomization.yaml
+                  cd deployment/k8s
 
-                  # Update namespace
-                  sed -i "s|namespace: ecommerce-vti|namespace: $NAMESPACE|g" kustomization.yaml
+                  # Create a temporary directory for processed manifests
+                  mkdir -p /tmp/k8s-manifests
 
-                  # Go back to k8s directory to update base files
-                  cd ../..
+                  # Copy and process base manifests
+                  cp base/*.yaml /tmp/k8s-manifests/
 
-                  # Update secrets placeholders in base files
-                  sed -i "s|BACKEND_SECRETS_NAME|${{ secrets.BACKEND_SECRET_NAME }}|g" base/external-secrets.yaml
-                  sed -i "s|FRONTEND_SECRETS_NAME|${{ secrets.FRONTEND_SECRET_NAME }}|g" base/external-secrets.yaml
+                  # Update secrets placeholders
+                  sed -i "s|BACKEND_SECRETS_NAME|${{ secrets.BACKEND_SECRET_NAME }}|g" /tmp/k8s-manifests/external-secrets.yaml
+                  sed -i "s|FRONTEND_SECRETS_NAME|${{ secrets.FRONTEND_SECRET_NAME }}|g" /tmp/k8s-manifests/external-secrets.yaml
 
                   # Update IAM role in serviceaccount
                   if [[ "$ENVIRONMENT" == "prod" ]]; then
-                    sed -i "s|EXTERNAL_SECRETS_ROLE_ARN|arn:aws:iam::234139188789:role/external-secrets-prod-role|g" base/serviceaccount.yaml
+                    sed -i "s|EXTERNAL_SECRETS_ROLE_ARN|arn:aws:iam::234139188789:role/external-secrets-prod-role|g" /tmp/k8s-manifests/serviceaccount.yaml
                   else
-                    sed -i "s|EXTERNAL_SECRETS_ROLE_ARN|arn:aws:iam::234139188789:role/external-secrets-dev-role|g" base/serviceaccount.yaml
+                    sed -i "s|EXTERNAL_SECRETS_ROLE_ARN|arn:aws:iam::234139188789:role/external-secrets-dev-role|g" /tmp/k8s-manifests/serviceaccount.yaml
                   fi
 
-                  # Deploy from k8s directory with correct path structure
-                  kubectl kustomize environments/$ENVIRONMENT | kubectl apply -f -
+                  # Update namespace in all manifests
+                  sed -i "s|namespace: ecommerce-vti|namespace: $NAMESPACE|g" /tmp/k8s-manifests/*.yaml
+
+                  # Update image tags in deployment files
+                  sed -i "s|backend-latest|backend-$IMAGE_TAG|g" /tmp/k8s-manifests/*deployment*.yaml
+                  sed -i "s|horizon-latest|horizon-$IMAGE_TAG|g" /tmp/k8s-manifests/*deployment*.yaml
+                  sed -i "s|scheduler-latest|scheduler-$IMAGE_TAG|g" /tmp/k8s-manifests/*deployment*.yaml
+                  sed -i "s|frontend-latest|frontend-$IMAGE_TAG|g" /tmp/k8s-manifests/*deployment*.yaml
+
+                  # Apply manifests in order
+                  echo "Applying Kubernetes manifests..."
+                  kubectl apply -f /tmp/k8s-manifests/namespace.yaml
+                  kubectl apply -f /tmp/k8s-manifests/serviceaccount.yaml
+                  kubectl apply -f /tmp/k8s-manifests/configmap.yaml
+                  kubectl apply -f /tmp/k8s-manifests/database-services.yaml
+                  kubectl apply -f /tmp/k8s-manifests/backend-deployment.yaml
+                  kubectl apply -f /tmp/k8s-manifests/workers-deployment.yaml
+                  kubectl apply -f /tmp/k8s-manifests/frontend-deployment.yaml
+                  kubectl apply -f /tmp/k8s-manifests/loadbalancer-services.yaml
+                  kubectl apply -f /tmp/k8s-manifests/external-secrets.yaml
 
                   # Wait for main deployments to be ready
                   kubectl wait --for=condition=available --timeout=600s deployment/backend-app -n $NAMESPACE
