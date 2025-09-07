@@ -197,6 +197,21 @@ jobs:
                   sed -i "s|BACKEND_SECRETS_NAME|$BACKEND_SECRETS|g" ../../base/external-secrets.yaml
                   sed -i "s|FRONTEND_SECRETS_NAME|$FRONTEND_SECRETS|g" ../../base/external-secrets.yaml
 
+                  # Update other placeholders based on environment
+                  if [[ "$ENVIRONMENT" == "prod" ]]; then
+                    # Production domains and settings
+                    sed -i "s|FRONTEND_DOMAIN|app.ecommerce-vti.com|g" ../../base/ingress.yaml
+                    sed -i "s|BACKEND_DOMAIN|api.ecommerce-vti.com|g" ../../base/ingress.yaml
+                    sed -i "s|CERTIFICATE_ARN|arn:aws:acm:ap-southeast-2:234139188789:certificate/your-prod-cert-id|g" ../../base/ingress.yaml
+                    sed -i "s|EXTERNAL_SECRETS_ROLE_ARN|arn:aws:iam::234139188789:role/external-secrets-prod-role|g" ../../base/serviceaccount.yaml
+                  else
+                    # Development domains and settings  
+                    sed -i "s|FRONTEND_DOMAIN|dev.ecommerce-vti.com|g" ../../base/ingress.yaml
+                    sed -i "s|BACKEND_DOMAIN|api-dev.ecommerce-vti.com|g" ../../base/ingress.yaml
+                    sed -i "s|CERTIFICATE_ARN|arn:aws:acm:ap-southeast-2:234139188789:certificate/your-dev-cert-id|g" ../../base/ingress.yaml
+                    sed -i "s|EXTERNAL_SECRETS_ROLE_ARN|arn:aws:iam::234139188789:role/external-secrets-dev-role|g" ../../base/serviceaccount.yaml
+                  fi
+
                   # Update namespace in kustomization.yaml
                   sed -i "s|namespace: ecommerce-vti|namespace: $NAMESPACE|g" kustomization.yaml
 
@@ -226,6 +241,11 @@ jobs:
                     # Check if it's healthy
                     kubectl get pods -n external-secrets-system
                   fi
+
+                  # Wait for External Secrets CRDs to be ready
+                  echo "Waiting for External Secrets CRDs to be available..."
+                  kubectl wait --for condition=established --timeout=300s crd/externalsecrets.external-secrets.io
+                  kubectl wait --for condition=established --timeout=300s crd/secretstores.external-secrets.io
 
                   # Deploy application
                   cd deployment/k8s
