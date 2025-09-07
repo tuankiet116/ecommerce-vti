@@ -242,10 +242,41 @@ jobs:
                     kubectl get pods -n external-secrets-system
                   fi
 
-                  # Wait for External Secrets CRDs to be ready
+                  # Ensure External Secrets CRDs are installed and ready
+                  echo "Checking External Secrets CRDs..."
+                  if ! kubectl get crd externalsecrets.external-secrets.io &> /dev/null; then
+                    echo "Installing External Secrets CRDs..."
+                    kubectl apply -f https://raw.githubusercontent.com/external-secrets/external-secrets/main/deploy/crds/bundle.yaml
+                  fi
+
+                  if ! kubectl get crd secretstores.external-secrets.io &> /dev/null; then
+                    echo "Installing SecretStore CRDs..."
+                    kubectl apply -f https://raw.githubusercontent.com/external-secrets/external-secrets/main/deploy/crds/bundle.yaml
+                  fi
+
+                  # Wait for External Secrets CRDs to be ready with retries
                   echo "Waiting for External Secrets CRDs to be available..."
-                  kubectl wait --for condition=established --timeout=300s crd/externalsecrets.external-secrets.io
-                  kubectl wait --for condition=established --timeout=300s crd/secretstores.external-secrets.io
+                  for i in {1..10}; do
+                    if kubectl wait --for condition=established --timeout=60s crd/externalsecrets.external-secrets.io crd/secretstores.external-secrets.io; then
+                      echo "CRDs are ready!"
+                      break
+                    else
+                      echo "CRDs not ready yet, retrying ($i/10)..."
+                      if [ $i -eq 10 ]; then
+                        echo "Failed to establish CRDs after 10 attempts"
+                        kubectl get crd | grep external-secrets || echo "No external-secrets CRDs found"
+                        exit 1
+                      fi
+                      sleep 10
+                    fi
+                  done
+
+                  # Verify CRDs are actually working
+                  echo "Verifying CRDs functionality..."
+                  kubectl api-resources | grep external-secrets || {
+                    echo "ERROR: External Secrets API resources not available"
+                    exit 1
+                  }
 
                   # Deploy application
                   cd deployment/k8s
@@ -268,7 +299,7 @@ jobs:
                   echo "- **Commit SHA:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
                   echo "- **Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
                   echo "" >> $GITHUB_STEP_SUMMARY
-                  
+
                   echo "### 🌐 Application URLs" >> $GITHUB_STEP_SUMMARY
                   echo "**Frontend:**" >> $GITHUB_STEP_SUMMARY
                   FRONTEND_URL=$(kubectl get svc frontend-loadbalancer -n $NAMESPACE -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "Pending...")
@@ -277,7 +308,7 @@ jobs:
                   else
                     echo "- LoadBalancer URL pending (check AWS console)" >> $GITHUB_STEP_SUMMARY
                   fi
-                  
+
                   echo "**Backend API:**" >> $GITHUB_STEP_SUMMARY
                   BACKEND_URL=$(kubectl get svc backend-loadbalancer -n $NAMESPACE -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "Pending...")
                   if [[ "$BACKEND_URL" != "Pending..." ]]; then
@@ -286,13 +317,13 @@ jobs:
                     echo "- LoadBalancer URL pending (check AWS console)" >> $GITHUB_STEP_SUMMARY
                   fi
                   echo "" >> $GITHUB_STEP_SUMMARY
-                  
+
                   echo "### 📊 Application Status" >> $GITHUB_STEP_SUMMARY
                   echo '```' >> $GITHUB_STEP_SUMMARY
                   kubectl get pods -n $NAMESPACE >> $GITHUB_STEP_SUMMARY
                   echo '```' >> $GITHUB_STEP_SUMMARY
                   echo "" >> $GITHUB_STEP_SUMMARY
-                  
+
                   echo "### 🔗 LoadBalancer Services" >> $GITHUB_STEP_SUMMARY
                   echo '```' >> $GITHUB_STEP_SUMMARY
                   kubectl get svc -n $NAMESPACE -o wide >> $GITHUB_STEP_SUMMARY
