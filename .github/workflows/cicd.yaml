@@ -278,9 +278,38 @@ jobs:
                     exit 1
                   }
 
-                  # Deploy application
+                  # Deploy application in phases
                   cd deployment/k8s
-                  kubectl kustomize environments/$ENVIRONMENT --load-restrictor=LoadRestrictionsNone | kubectl apply -f -
+
+                  # Phase 1: Apply basic resources first (namespace, configmaps, services, deployments)
+                  echo "Phase 1: Deploying basic resources..."
+                  kubectl kustomize environments/$ENVIRONMENT --load-restrictor=LoadRestrictionsNone > /tmp/complete-manifest.yaml
+
+                  # Apply everything except external-secrets
+                  grep -v -E "^(apiVersion: external-secrets\.io|kind: (ExternalSecret|SecretStore))" /tmp/complete-manifest.yaml | \
+                    kubectl apply -f -
+
+                  # Phase 2: Apply external-secrets separately with error handling
+                  echo "Phase 2: Deploying external-secrets..."
+
+                  # Wait a bit more for operator to be fully ready
+                  sleep 10
+
+                  # Double check CRDs are available
+                  kubectl get crd externalsecrets.external-secrets.io
+                  kubectl get crd secretstores.external-secrets.io
+
+                  # Apply external-secrets with namespace substitution
+                  sed "s/namespace: ecommerce-vti/namespace: $NAMESPACE/g" base/external-secrets.yaml | \
+                    kubectl apply -f - || {
+                      echo "Failed to apply external-secrets, debugging..."
+                      kubectl get crd | grep external-secrets
+                      kubectl api-resources | grep external-secrets
+                      kubectl get pods -n external-secrets-system
+                      echo "External secrets manifest:"
+                      sed "s/namespace: ecommerce-vti/namespace: $NAMESPACE/g" base/external-secrets.yaml
+                      exit 1
+                    }
 
                   # Wait for deployments
                   kubectl wait --for=condition=available --timeout=600s deployment/backend-app -n $NAMESPACE
