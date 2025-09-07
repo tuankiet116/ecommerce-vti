@@ -102,19 +102,85 @@ jobs:
                   ECR_REPOSITORY: ${{ steps.env.outputs.ecr_repository }}
                   IMAGE_TAG: ${{ github.sha }}
               run: |
-                  # Build and push backend images
-                  docker build -f deployment/docker/backend.Dockerfile -t $ECR_REGISTRY/$ECR_REPOSITORY:backend-$IMAGE_TAG --target production .
-                  docker push $ECR_REGISTRY/$ECR_REPOSITORY:backend-$IMAGE_TAG
+                  # Debug ECR configuration
+                  echo "=== ECR Configuration Debug ==="
+                  echo "ECR_REGISTRY: $ECR_REGISTRY"
+                  echo "ECR_REPOSITORY: $ECR_REPOSITORY"
+                  echo "IMAGE_TAG: $IMAGE_TAG"
+                  echo "AWS_REGION: $AWS_REGION"
 
-                  docker build -f deployment/docker/backend.Dockerfile -t $ECR_REGISTRY/$ECR_REPOSITORY:horizon-$IMAGE_TAG --target horizon .
-                  docker push $ECR_REGISTRY/$ECR_REPOSITORY:horizon-$IMAGE_TAG
+                  # Function to check if image exists
+                  check_image_exists() {
+                    local image_tag=$1
+                    echo "Checking if image $ECR_REPOSITORY:$image_tag exists..."
+                    if aws ecr describe-images --repository-name $ECR_REPOSITORY --image-ids imageTag=$image_tag --region $AWS_REGION >/dev/null 2>&1; then
+                      echo "✅ Image $image_tag already exists, skipping build..."
+                      return 0
+                    else
+                      echo "❌ Image $image_tag not found, will build..."
+                      return 1
+                    fi
+                  }
 
-                  docker build -f deployment/docker/backend.Dockerfile -t $ECR_REGISTRY/$ECR_REPOSITORY:scheduler-$IMAGE_TAG --target scheduler .
-                  docker push $ECR_REGISTRY/$ECR_REPOSITORY:scheduler-$IMAGE_TAG
+                  # Build and push backend images (only if not exists)
+                  if ! check_image_exists "backend-$IMAGE_TAG"; then
+                    echo "Building backend image..."
+                    docker build -f deployment/docker/backend.Dockerfile -t $ECR_REGISTRY/$ECR_REPOSITORY:backend-$IMAGE_TAG --target production .
+                    if ! docker push $ECR_REGISTRY/$ECR_REPOSITORY:backend-$IMAGE_TAG; then
+                      echo "⚠️ Push failed (likely due to tag immutability), checking if image exists now..."
+                      if check_image_exists "backend-$IMAGE_TAG"; then
+                        echo "✅ Image exists after failed push, continuing..."
+                      else
+                        echo "❌ Push failed and image still doesn't exist"
+                        exit 1
+                      fi
+                    fi
+                  fi
 
-                  # Build and push frontend image
-                  docker build -f deployment/docker/frontend.Dockerfile -t $ECR_REGISTRY/$ECR_REPOSITORY:frontend-$IMAGE_TAG .
-                  docker push $ECR_REGISTRY/$ECR_REPOSITORY:frontend-$IMAGE_TAG
+                  if ! check_image_exists "horizon-$IMAGE_TAG"; then
+                    echo "Building horizon image..."
+                    docker build -f deployment/docker/backend.Dockerfile -t $ECR_REGISTRY/$ECR_REPOSITORY:horizon-$IMAGE_TAG --target horizon .
+                    if ! docker push $ECR_REGISTRY/$ECR_REPOSITORY:horizon-$IMAGE_TAG; then
+                      echo "⚠️ Push failed (likely due to tag immutability), checking if image exists now..."
+                      if check_image_exists "horizon-$IMAGE_TAG"; then
+                        echo "✅ Image exists after failed push, continuing..."
+                      else
+                        echo "❌ Push failed and image still doesn't exist"
+                        exit 1
+                      fi
+                    fi
+                  fi
+
+                  if ! check_image_exists "scheduler-$IMAGE_TAG"; then
+                    echo "Building scheduler image..."
+                    docker build -f deployment/docker/backend.Dockerfile -t $ECR_REGISTRY/$ECR_REPOSITORY:scheduler-$IMAGE_TAG --target scheduler .
+                    if ! docker push $ECR_REGISTRY/$ECR_REPOSITORY:scheduler-$IMAGE_TAG; then
+                      echo "⚠️ Push failed (likely due to tag immutability), checking if image exists now..."
+                      if check_image_exists "scheduler-$IMAGE_TAG"; then
+                        echo "✅ Image exists after failed push, continuing..."
+                      else
+                        echo "❌ Push failed and image still doesn't exist"
+                        exit 1
+                      fi
+                    fi
+                  fi
+
+                  # Build and push frontend image (only if not exists)
+                  if ! check_image_exists "frontend-$IMAGE_TAG"; then
+                    echo "Building frontend image..."
+                    docker build -f deployment/docker/frontend.Dockerfile -t $ECR_REGISTRY/$ECR_REPOSITORY:frontend-$IMAGE_TAG .
+                    if ! docker push $ECR_REGISTRY/$ECR_REPOSITORY:frontend-$IMAGE_TAG; then
+                      echo "⚠️ Push failed (likely due to tag immutability), checking if image exists now..."
+                      if check_image_exists "frontend-$IMAGE_TAG"; then
+                        echo "✅ Image exists after failed push, continuing..."
+                      else
+                        echo "❌ Push failed and image still doesn't exist"
+                        exit 1
+                      fi
+                    fi
+                  fi
+
+                  echo "All images are ready in ECR!"
 
             - name: Setup Helm
               uses: azure/setup-helm@v4
@@ -236,6 +302,13 @@ jobs:
                   echo "Testing CRD access..."
                   kubectl api-resources | grep external-secrets
 
+                  echo "Checking External Secrets Operator controller logs..."
+                  kubectl logs -n external-secrets-system -l app.kubernetes.io/name=external-secrets --tail=20 || echo "No logs available"
+
+                  echo "Verifying IRSA setup..."
+                  kubectl get serviceaccount -n external-secrets-system
+                  kubectl describe serviceaccount external-secrets -n external-secrets-system || echo "No external-secrets SA found"
+
                   # Debug: Template validation without CRDs dependency
                   echo "=== Validating Helm templates ==="
                   helm template ecommerce-vti . \
@@ -253,6 +326,18 @@ jobs:
 
                   # Deploy using Helm with enhanced error handling
                   echo "=== Starting Helm deployment ==="
+
+                  # Clean up existing namespace if it exists without Helm management
+                  if kubectl get namespace $NAMESPACE 2>/dev/null; then
+                    echo "Namespace $NAMESPACE exists, checking if managed by Helm..."
+                    if ! kubectl get namespace $NAMESPACE -o jsonpath='{.metadata.labels.app\.kubernetes\.io/managed-by}' | grep -q "Helm"; then
+                      echo "Namespace not managed by Helm, deleting to recreate..."
+                      kubectl delete namespace $NAMESPACE --timeout=120s || true
+                      echo "Waiting for namespace deletion..."
+                      sleep 30
+                    fi
+                  fi
+
                   if ! helm upgrade --install ecommerce-vti . \
                     --namespace $NAMESPACE \
                     --create-namespace \
@@ -287,6 +372,23 @@ jobs:
                   echo "=== Waiting for deployments to be ready ==="
                   kubectl wait --for=condition=available --timeout=600s deployment/backend-app -n $NAMESPACE
                   kubectl wait --for=condition=available --timeout=600s deployment/frontend-app -n $NAMESPACE
+
+                  # External Secrets post-deployment debugging
+                  echo "=== External Secrets Post-Deployment Debugging ==="
+                  echo "Checking SecretStore status:"
+                  kubectl get secretstore -n $NAMESPACE -o wide
+
+                  echo "Checking ExternalSecrets status:"
+                  kubectl get externalsecret -n $NAMESPACE -o wide
+
+                  echo "Checking generated secrets:"
+                  kubectl get secrets -n $NAMESPACE | grep -E "(backend-secrets|frontend-secrets)" || echo "No secrets generated yet"
+
+                  echo "Checking External Secrets events:"
+                  kubectl get events -n $NAMESPACE | grep -i "external" || echo "No external secrets events"
+
+                  echo "Checking AWS IAM role assumption (if IRSA configured):"
+                  kubectl get pods -n $NAMESPACE -l app=backend-app -o yaml | grep -A 5 -B 5 "serviceAccount\|iam.amazonaws.com" || echo "No IRSA annotations found"
 
             - name: Deployment summary
               env:

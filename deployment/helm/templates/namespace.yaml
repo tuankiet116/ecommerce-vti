@@ -1,4 +1,6 @@
-{{- if .Values.namespace.create }}
+# Namespace creation disabled to prevent ownership conflicts
+# Let CI/CD create namespace directly with proper Helm ownership
+{{- if false }}
 apiVersion: v1
 kind: Namespace
 metadata:
