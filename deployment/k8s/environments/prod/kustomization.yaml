@@ -12,7 +12,8 @@ resources:
     - ../../base/backend-deployment.yaml
     - ../../base/workers-deployment.yaml
     - ../../base/frontend-deployment.yaml
-    - ../../base/ingress.yaml
+    - ../../base/loadbalancer-services.yaml  # Temporary LoadBalancer for testing
+    # - ../../base/ingress.yaml  # Commented out until domains are configured
 
 patches:
     - target:

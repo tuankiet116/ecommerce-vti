@@ -199,16 +199,16 @@ jobs:
 
                   # Update other placeholders based on environment
                   if [[ "$ENVIRONMENT" == "prod" ]]; then
-                    # Production domains and settings
-                    sed -i "s|FRONTEND_DOMAIN|app.ecommerce-vti.com|g" ../../base/ingress.yaml
-                    sed -i "s|BACKEND_DOMAIN|api.ecommerce-vti.com|g" ../../base/ingress.yaml
-                    sed -i "s|CERTIFICATE_ARN|arn:aws:acm:ap-southeast-2:234139188789:certificate/your-prod-cert-id|g" ../../base/ingress.yaml
+                    # Production domains and settings (commented out until domains are ready)
+                    # sed -i "s|FRONTEND_DOMAIN|app.ecommerce-vti.com|g" ../../base/ingress.yaml
+                    # sed -i "s|BACKEND_DOMAIN|api.ecommerce-vti.com|g" ../../base/ingress.yaml
+                    # sed -i "s|CERTIFICATE_ARN|arn:aws:acm:ap-southeast-2:234139188789:certificate/your-prod-cert-id|g" ../../base/ingress.yaml
                     sed -i "s|EXTERNAL_SECRETS_ROLE_ARN|arn:aws:iam::234139188789:role/external-secrets-prod-role|g" ../../base/serviceaccount.yaml
                   else
-                    # Development domains and settings  
-                    sed -i "s|FRONTEND_DOMAIN|dev.ecommerce-vti.com|g" ../../base/ingress.yaml
-                    sed -i "s|BACKEND_DOMAIN|api-dev.ecommerce-vti.com|g" ../../base/ingress.yaml
-                    sed -i "s|CERTIFICATE_ARN|arn:aws:acm:ap-southeast-2:234139188789:certificate/your-dev-cert-id|g" ../../base/ingress.yaml
+                    # Development domains and settings (commented out until domains are ready) 
+                    # sed -i "s|FRONTEND_DOMAIN|dev.ecommerce-vti.com|g" ../../base/ingress.yaml
+                    # sed -i "s|BACKEND_DOMAIN|api-dev.ecommerce-vti.com|g" ../../base/ingress.yaml
+                    # sed -i "s|CERTIFICATE_ARN|arn:aws:acm:ap-southeast-2:234139188789:certificate/your-dev-cert-id|g" ../../base/ingress.yaml
                     sed -i "s|EXTERNAL_SECRETS_ROLE_ARN|arn:aws:iam::234139188789:role/external-secrets-dev-role|g" ../../base/serviceaccount.yaml
                   fi
 
