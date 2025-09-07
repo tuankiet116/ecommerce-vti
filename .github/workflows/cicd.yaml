@@ -268,7 +268,32 @@ jobs:
                   echo "- **Commit SHA:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
                   echo "- **Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
                   echo "" >> $GITHUB_STEP_SUMMARY
+                  
+                  echo "### 🌐 Application URLs" >> $GITHUB_STEP_SUMMARY
+                  echo "**Frontend:**" >> $GITHUB_STEP_SUMMARY
+                  FRONTEND_URL=$(kubectl get svc frontend-loadbalancer -n $NAMESPACE -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "Pending...")
+                  if [[ "$FRONTEND_URL" != "Pending..." ]]; then
+                    echo "- http://$FRONTEND_URL" >> $GITHUB_STEP_SUMMARY
+                  else
+                    echo "- LoadBalancer URL pending (check AWS console)" >> $GITHUB_STEP_SUMMARY
+                  fi
+                  
+                  echo "**Backend API:**" >> $GITHUB_STEP_SUMMARY
+                  BACKEND_URL=$(kubectl get svc backend-loadbalancer -n $NAMESPACE -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "Pending...")
+                  if [[ "$BACKEND_URL" != "Pending..." ]]; then
+                    echo "- http://$BACKEND_URL" >> $GITHUB_STEP_SUMMARY
+                  else
+                    echo "- LoadBalancer URL pending (check AWS console)" >> $GITHUB_STEP_SUMMARY
+                  fi
+                  echo "" >> $GITHUB_STEP_SUMMARY
+                  
                   echo "### 📊 Application Status" >> $GITHUB_STEP_SUMMARY
                   echo '```' >> $GITHUB_STEP_SUMMARY
                   kubectl get pods -n $NAMESPACE >> $GITHUB_STEP_SUMMARY
+                  echo '```' >> $GITHUB_STEP_SUMMARY
+                  echo "" >> $GITHUB_STEP_SUMMARY
+                  
+                  echo "### 🔗 LoadBalancer Services" >> $GITHUB_STEP_SUMMARY
+                  echo '```' >> $GITHUB_STEP_SUMMARY
+                  kubectl get svc -n $NAMESPACE -o wide >> $GITHUB_STEP_SUMMARY
                   echo '```' >> $GITHUB_STEP_SUMMARY
