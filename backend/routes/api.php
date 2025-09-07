@@ -15,6 +15,15 @@ use Illuminate\Support\Facades\Route;
 $abilityAccessToken = AuthConstant::ABILITY_ACCESS_TOKEN;
 $abilityRefeshToken = AuthConstant::ABILITY_REFRESH_TOKEN;
 
+// Health check endpoint for Kubernetes
+Route::get('/health', function () {
+    return response()->json([
+        'status' => 'healthy',
+        'timestamp' => now()->toISOString(),
+        'service' => 'ecommerce-vti-backend'
+    ]);
+});
+
 Route::post("/login", [AuthenticateController::class, "login"])->name("shop.login");
 Route::post("/register", [AuthenticateController::class, "register"])->name("shop.register");
 

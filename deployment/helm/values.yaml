@@ -20,7 +20,7 @@ image:
 # Backend application
 backend:
   name: backend-app
-  replicaCount: 2
+  replicaCount: 1  # Reduced for stability
   image:
     name: backend
   service:
@@ -37,18 +37,22 @@ backend:
   livenessProbe:
     tcpSocket:
       port: 9000
-    initialDelaySeconds: 30
-    periodSeconds: 10
+    initialDelaySeconds: 60
+    periodSeconds: 30
+    timeoutSeconds: 10
+    failureThreshold: 3
   readinessProbe:
     tcpSocket:
       port: 9000
-    initialDelaySeconds: 5
-    periodSeconds: 5
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
 
 # Frontend application
 frontend:
   name: frontend-app
-  replicaCount: 2
+  replicaCount: 1  # Reduced for stability
   image:
     name: frontend
   service:
@@ -66,14 +70,18 @@ frontend:
     httpGet:
       path: /
       port: 3000
-    initialDelaySeconds: 30
-    periodSeconds: 10
+    initialDelaySeconds: 60  # Increased delay for Next.js startup
+    periodSeconds: 30
+    timeoutSeconds: 10
+    failureThreshold: 3
   readinessProbe:
     httpGet:
       path: /
       port: 3000
-    initialDelaySeconds: 5
-    periodSeconds: 5
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
 
 # Worker services
 horizon:
