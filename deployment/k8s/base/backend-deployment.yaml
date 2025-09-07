@@ -22,7 +22,7 @@ spec:
                   ports:
                       - containerPort: 9000
                   envFrom:
-                      # Load ALL secrets from AWS Secrets Manager
+                      # Load ALL backend secrets from AWS Secrets Manager
                       - secretRef:
                             name: backend-secrets
                       # Load basic config from ConfigMap

@@ -7,7 +7,7 @@ on:
         branches: [main, staging]
 
 env:
-    AWS_REGION: us-east-1
+    AWS_REGION: ap-southeast-2
     AWS_ACCOUNT_ID: 234139188789
 
 jobs:
@@ -96,6 +96,7 @@ jobs:
                     echo "eks_cluster=${{ secrets.EKS_CLUSTER_NAME }}" >> $GITHUB_OUTPUT
                     echo "namespace=${{ secrets.NAMESPACE }}" >> $GITHUB_OUTPUT
                     echo "backend_secrets=${{ secrets.BACKEND_SECRET_NAME }}" >> $GITHUB_OUTPUT
+                    echo "frontend_secrets=${{ secrets.FRONTEND_SECRET_NAME }}" >> $GITHUB_OUTPUT
                     
                     echo "Selected: PROD environment"
                     echo "ECR Repository: ${{ secrets.ECR_REPOSITORY }}"
@@ -105,6 +106,7 @@ jobs:
                     echo "eks_cluster=${{ secrets.EKS_CLUSTER_NAME }}" >> $GITHUB_OUTPUT
                     echo "namespace=${{ secrets.NAMESPACE }}" >> $GITHUB_OUTPUT
                     echo "backend_secrets=${{ secrets.BACKEND_SECRET_NAME }}" >> $GITHUB_OUTPUT
+                    echo "frontend_secrets=${{ secrets.FRONTEND_SECRET_NAME }}" >> $GITHUB_OUTPUT
                     
                     echo "Selected: DEV environment"
                     echo "ECR Repository: ${{ secrets.ECR_REPOSITORY }}"
@@ -174,6 +176,7 @@ jobs:
                   IMAGE_TAG: ${{ github.sha }}
                   ENVIRONMENT: ${{ steps.env.outputs.environment }}
                   BACKEND_SECRETS: ${{ steps.env.outputs.backend_secrets }}
+                  FRONTEND_SECRETS: ${{ steps.env.outputs.frontend_secrets }}
                   NAMESPACE: ${{ steps.env.outputs.namespace }}
               run: |
                   # Update kustomization with new image tags
@@ -183,9 +186,11 @@ jobs:
                   sed -i "s|backend-latest|backend-$IMAGE_TAG|g" kustomization.yaml
                   sed -i "s|horizon-latest|horizon-$IMAGE_TAG|g" kustomization.yaml
                   sed -i "s|scheduler-latest|scheduler-$IMAGE_TAG|g" kustomization.yaml
-                  sed -i "s|frontend-latest|frontend-$IMAGE_TAG|g" kust
+                  sed -i "s|frontend-latest|frontend-$IMAGE_TAG|g" kustomization.yaml
+                  
                   # Update secrets names in external-secrets.yaml
                   sed -i "s|BACKEND_SECRETS_NAME|$BACKEND_SECRETS|g" ../../base/external-secrets.yaml
+                  sed -i "s|FRONTEND_SECRETS_NAME|$FRONTEND_SECRETS|g" ../../base/external-secrets.yaml
 
                   # Update namespace in kustomization.yaml
                   sed -i "s|namespace: ecommerce-vti|namespace: $NAMESPACE|g" kustomization.yaml
