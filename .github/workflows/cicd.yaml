@@ -192,7 +192,7 @@ jobs:
                   sed -i "s|horizon-latest|horizon-$IMAGE_TAG|g" kustomization.yaml
                   sed -i "s|scheduler-latest|scheduler-$IMAGE_TAG|g" kustomization.yaml
                   sed -i "s|frontend-latest|frontend-$IMAGE_TAG|g" kustomization.yaml
-                  
+
                   # Update secrets names in external-secrets.yaml
                   sed -i "s|BACKEND_SECRETS_NAME|$BACKEND_SECRETS|g" ../../base/external-secrets.yaml
                   sed -i "s|FRONTEND_SECRETS_NAME|$FRONTEND_SECRETS|g" ../../base/external-secrets.yaml
@@ -211,10 +211,20 @@ jobs:
 
                   # Install external-secrets operator if not exists
                   if ! kubectl get namespace external-secrets-system &> /dev/null; then
+                    echo "Installing External Secrets Operator..."
                     helm repo add external-secrets https://charts.external-secrets.io
                     helm repo update
-                    helm install external-secrets external-secrets/external-secrets -n external-secrets-system --create-namespace
-                    kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=external-secrets -n external-secrets-system --timeout=300s
+                    helm install external-secrets external-secrets/external-secrets -n external-secrets-system --create-namespace --wait --timeout=10m
+                    
+                    # Wait for deployment to be ready
+                    echo "Waiting for External Secrets Operator to be ready..."
+                    kubectl wait --for=condition=available deployment/external-secrets -n external-secrets-system --timeout=600s
+                    kubectl wait --for=condition=available deployment/external-secrets-webhook -n external-secrets-system --timeout=600s
+                    kubectl wait --for=condition=available deployment/external-secrets-cert-controller -n external-secrets-system --timeout=600s
+                  else
+                    echo "External Secrets Operator already exists"
+                    # Check if it's healthy
+                    kubectl get pods -n external-secrets-system
                   fi
 
                   # Deploy application
