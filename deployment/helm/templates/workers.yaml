@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.horizon.name }}
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    {{- include "ecommerce-vti.labels" . | nindent 4 }}
+    app.kubernetes.io/component: horizon
+spec:
+  replicas: {{ .Values.horizon.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "ecommerce-vti.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: horizon
+  template:
+    metadata:
+      labels:
+        {{- include "ecommerce-vti.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: horizon
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      containers:
+        - name: horizon
+          image: {{ include "ecommerce-vti.horizon.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          envFrom:
+            - configMapRef:
+                name: backend-config
+            - secretRef:
+                name: {{ .Values.externalSecrets.backend.secretName }}
+          resources:
+            {{- toYaml .Values.horizon.resources | nindent 12 }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.scheduler.name }}
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    {{- include "ecommerce-vti.labels" . | nindent 4 }}
+    app.kubernetes.io/component: scheduler
+spec:
+  replicas: {{ .Values.scheduler.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "ecommerce-vti.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: scheduler
+  template:
+    metadata:
+      labels:
+        {{- include "ecommerce-vti.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: scheduler
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      containers:
+        - name: scheduler
+          image: {{ include "ecommerce-vti.scheduler.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          envFrom:
+            - configMapRef:
+                name: backend-config
+            - secretRef:
+                name: {{ .Values.externalSecrets.backend.secretName }}
+          resources:
+            {{- toYaml .Values.scheduler.resources | nindent 12 }}

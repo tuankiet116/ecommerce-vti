@@ -1,0 +1,86 @@
+# Production values for ecommerce-vti
+
+# Override environment
+app:
+  environment: production
+
+# Production image repository
+image:
+  repository: de000079-ecr-repo-prod
+
+# Production scaling
+backend:
+  replicaCount: 3
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+
+frontend:
+  replicaCount: 3
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+
+horizon:
+  replicaCount: 2
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+# Production database
+postgresql:
+  env:
+    POSTGRES_DB: ecommerce_vti_prod
+    POSTGRES_PASSWORD: prodpassword123
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+  persistence:
+    size: 50Gi
+
+# Production Redis
+redis:
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+# Production External Secrets
+externalSecrets:
+  backend:
+    awsSecretName: DE000079-ecommerce-vti-backend-prod
+  frontend:
+    awsSecretName: DE000079-ecommerce-vti-frontend-prod
+  secretStore:
+    roleArn: arn:aws:iam::234139188789:role/external-secrets-prod-role
+
+# Production Service Account
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::234139188789:role/external-secrets-prod-role
+
+# Production ConfigMap
+configMap:
+  backend:
+    APP_ENV: production
+    APP_DEBUG: "false"
+    DB_DATABASE: ecommerce_vti_prod

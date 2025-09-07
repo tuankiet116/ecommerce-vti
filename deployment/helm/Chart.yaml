@@ -1,0 +1,17 @@
+apiVersion: v2
+name: ecommerce-vti
+description: E-commerce VTI Application Helm Chart
+type: application
+version: 0.1.0
+appVersion: "1.0"
+
+keywords:
+  - ecommerce
+  - laravel
+  - nextjs
+  - php
+  - react
+
+maintainers:
+  - name: VTI Team
+    email: dev@vti.com

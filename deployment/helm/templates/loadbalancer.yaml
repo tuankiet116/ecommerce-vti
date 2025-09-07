@@ -1,0 +1,45 @@
+{{- if .Values.loadBalancer.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-loadbalancer
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    {{- include "ecommerce-vti.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend-lb
+  {{- with .Values.loadBalancer.backend.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.loadBalancer.backend.type }}
+  ports:
+    - port: {{ .Values.loadBalancer.backend.port }}
+      targetPort: {{ .Values.loadBalancer.backend.targetPort }}
+      protocol: TCP
+  selector:
+    {{- include "ecommerce-vti.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-loadbalancer
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    {{- include "ecommerce-vti.labels" . | nindent 4 }}
+    app.kubernetes.io/component: frontend-lb
+  {{- with .Values.loadBalancer.frontend.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.loadBalancer.frontend.type }}
+  ports:
+    - port: {{ .Values.loadBalancer.frontend.port }}
+      targetPort: {{ .Values.loadBalancer.frontend.targetPort }}
+      protocol: TCP
+  selector:
+    {{- include "ecommerce-vti.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: frontend
+{{- end }}

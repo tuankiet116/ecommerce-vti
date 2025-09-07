@@ -10,13 +10,13 @@ deployment/
 │   ├── backend.Dockerfile     # Multi-stage Dockerfile for Laravel backend
 │   ├── frontend.Dockerfile    # Dockerfile for Next.js frontend
 │   └── supervisor/            # Supervisor configs for backend services
-├── k8s/                       # Kubernetes manifests
-│   ├── base/                  # Base Kubernetes configurations
-│   └── environments/          # Environment-specific overrides
-│       ├── dev/               # Development environment
-│       └── prod/              # Production environment
+├── helm/                      # Helm Chart (Primary deployment method)
+│   ├── Chart.yaml             # Chart metadata
+│   ├── values.yaml            # Default values
+│   ├── values-dev.yaml        # Development overrides
+│   ├── values-prod.yaml       # Production overrides
+│   └── templates/             # Kubernetes templates
 ├── nginx/                     # Nginx configurations
-├── scripts/                   # Deployment scripts
 └── docker-compose.prod.yml    # Production Docker Compose
 ```
 
@@ -44,9 +44,30 @@ deployment/
 1. AWS CLI configured with appropriate permissions
 2. kubectl installed and configured
 3. Docker installed
-4. Helm installed (for external-secrets operator)
+4. **Helm v3.12+** installed
 
-### Environment Setup
+### Deployment with Helm Charts
+
+1. **Deploy using Helm** (Recommended):
+
+    ```bash
+    # For development
+    cd deployment/helm
+    helm upgrade --install ecommerce-vti . \
+      --namespace ecommerce-vti-dev \
+      --create-namespace \
+      --values ./values.yaml \
+      --values ./values-dev.yaml \
+      --set image.tag=your-image-tag
+
+    # For production
+    helm upgrade --install ecommerce-vti . \
+      --namespace ecommerce-vti-prod \
+      --create-namespace \
+      --values ./values.yaml \
+      --values ./values-prod.yaml \
+      --set image.tag=your-image-tag
+    ```
 
 1. **Configure GitHub Secrets** (required for CI/CD):
 
@@ -116,26 +137,33 @@ aws secretsmanager create-secret
 
 ### Manual Deployment
 
+**Note:** With Helm Charts, manual deployment is simplified:
+
 1. **Build and Push Images**:
 
     ```bash
-    # For development
-    ./deployment/scripts/build-images.sh dev
-    ./deployment/scripts/push-images.sh dev
+    # Build images
+    docker build -f deployment/docker/backend.Dockerfile -t your-registry/backend:tag --target production .
+    docker build -f deployment/docker/backend.Dockerfile -t your-registry/horizon:tag --target horizon .
+    docker build -f deployment/docker/backend.Dockerfile -t your-registry/scheduler:tag --target scheduler .
+    docker build -f deployment/docker/frontend.Dockerfile -t your-registry/frontend:tag .
 
-    # For production
-    ./deployment/scripts/build-images.sh prod
-    ./deployment/scripts/push-images.sh prod
+    # Push images
+    docker push your-registry/backend:tag
+    docker push your-registry/horizon:tag
+    docker push your-registry/scheduler:tag
+    docker push your-registry/frontend:tag
     ```
 
-2. **Deploy to Kubernetes**:
+2. **Deploy with Helm**:
 
     ```bash
-    # For development
-    ./deployment/scripts/deploy.sh dev
-
-    # For production
-    ./deployment/scripts/deploy.sh prod
+    cd deployment/helm
+    helm upgrade --install ecommerce-vti . \
+      --namespace your-namespace \
+      --create-namespace \
+      --values ./values-{environment}.yaml \
+      --set image.tag=your-tag
     ```
 
 ## 🔄 CI/CD Pipeline

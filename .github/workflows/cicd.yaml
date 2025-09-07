@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: CI/CD Pipeline with Helm
 
 on:
     push:
@@ -23,13 +23,6 @@ jobs:
               with:
                   php-version: "8.4"
                   extensions: pdo, pdo_pgsql, mbstring, zip, bcmath, pcntl
-
-            - name: Cache Composer dependencies
-              uses: actions/cache@v3
-              with:
-                  path: backend/vendor
-                  key: ${{ runner.os }}-composer-${{ hashFiles('backend/composer.lock') }}
-                  restore-keys: ${{ runner.os }}-composer-
 
             - name: Install backend dependencies
               working-directory: ./backend
@@ -61,7 +54,7 @@ jobs:
               run: pnpm build
 
     build-and-deploy:
-        name: Build and Deploy
+        name: Build and Deploy with Helm
         runs-on: ubuntu-latest
         needs: test
         if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging')
@@ -79,13 +72,14 @@ jobs:
               run: |
                   if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
                     echo "environment=prod" >> $GITHUB_OUTPUT
+                    echo "namespace=ecommerce-vti-prod" >> $GITHUB_OUTPUT
                   else
                     echo "environment=dev" >> $GITHUB_OUTPUT
+                    echo "namespace=ecommerce-vti-dev" >> $GITHUB_OUTPUT
                   fi
                   echo "aws_role_arn=${{ secrets.AWS_ROLE_ARN }}" >> $GITHUB_OUTPUT
                   echo "ecr_repository=${{ secrets.ECR_REPOSITORY }}" >> $GITHUB_OUTPUT
                   echo "eks_cluster=${{ secrets.EKS_CLUSTER_NAME }}" >> $GITHUB_OUTPUT
-                  echo "namespace=${{ secrets.NAMESPACE }}" >> $GITHUB_OUTPUT
 
             - name: Configure AWS credentials
               uses: aws-actions/configure-aws-credentials@v4
@@ -118,14 +112,19 @@ jobs:
                   docker build -f deployment/docker/frontend.Dockerfile -t $ECR_REGISTRY/$ECR_REPOSITORY:frontend-$IMAGE_TAG .
                   docker push $ECR_REGISTRY/$ECR_REPOSITORY:frontend-$IMAGE_TAG
 
-            - name: Setup External Secrets Operator
+            - name: Setup Helm
+              uses: azure/setup-helm@v4
+              with:
+                  version: 'v3.12.0'
+
+            - name: Setup Kubernetes
               env:
                   EKS_CLUSTER: ${{ steps.env.outputs.eks_cluster }}
               run: |
                   # Update kubeconfig
                   aws eks update-kubeconfig --region $AWS_REGION --name $EKS_CLUSTER
 
-                  # Install External Secrets Operator using official method
+                  # Install External Secrets Operator if not exists
                   if ! kubectl get namespace external-secrets-system &> /dev/null; then
                     echo "Installing External Secrets Operator..."
                     helm repo add external-secrets https://charts.external-secrets.io
@@ -142,11 +141,11 @@ jobs:
                     echo "External Secrets Operator already exists"
                   fi
 
-                  # Simple wait for CRDs to be ready
+                  # Wait for CRDs to be ready
                   echo "Waiting for CRDs to be established..."
                   kubectl wait --for condition=established --timeout=300s crd/externalsecrets.external-secrets.io crd/secretstores.external-secrets.io
 
-            - name: Update manifests and deploy
+            - name: Deploy with Helm
               env:
                   ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
                   ECR_REPOSITORY: ${{ steps.env.outputs.ecr_repository }}
@@ -154,45 +153,19 @@ jobs:
                   ENVIRONMENT: ${{ steps.env.outputs.environment }}
                   NAMESPACE: ${{ steps.env.outputs.namespace }}
               run: |
-                  cd deployment/k8s
+                  cd deployment/helm
 
-                  # Create a temporary directory for processed manifests
-                  mkdir -p /tmp/k8s-manifests
-
-                  # Copy and process base manifests
-                  cp base/*.yaml /tmp/k8s-manifests/
-
-                  # Update secrets placeholders
-                  sed -i "s|BACKEND_SECRETS_NAME|${{ secrets.BACKEND_SECRET_NAME }}|g" /tmp/k8s-manifests/external-secrets.yaml
-                  sed -i "s|FRONTEND_SECRETS_NAME|${{ secrets.FRONTEND_SECRET_NAME }}|g" /tmp/k8s-manifests/external-secrets.yaml
-
-                  # Update IAM role in serviceaccount
-                  if [[ "$ENVIRONMENT" == "prod" ]]; then
-                    sed -i "s|EXTERNAL_SECRETS_ROLE_ARN|arn:aws:iam::234139188789:role/external-secrets-prod-role|g" /tmp/k8s-manifests/serviceaccount.yaml
-                  else
-                    sed -i "s|EXTERNAL_SECRETS_ROLE_ARN|arn:aws:iam::234139188789:role/external-secrets-dev-role|g" /tmp/k8s-manifests/serviceaccount.yaml
-                  fi
-
-                  # Update namespace in all manifests
-                  sed -i "s|namespace: ecommerce-vti|namespace: $NAMESPACE|g" /tmp/k8s-manifests/*.yaml
-
-                  # Update image tags in deployment files
-                  sed -i "s|backend-latest|backend-$IMAGE_TAG|g" /tmp/k8s-manifests/*deployment*.yaml
-                  sed -i "s|horizon-latest|horizon-$IMAGE_TAG|g" /tmp/k8s-manifests/*deployment*.yaml
-                  sed -i "s|scheduler-latest|scheduler-$IMAGE_TAG|g" /tmp/k8s-manifests/*deployment*.yaml
-                  sed -i "s|frontend-latest|frontend-$IMAGE_TAG|g" /tmp/k8s-manifests/*deployment*.yaml
-
-                  # Apply manifests in order
-                  echo "Applying Kubernetes manifests..."
-                  kubectl apply -f /tmp/k8s-manifests/namespace.yaml
-                  kubectl apply -f /tmp/k8s-manifests/serviceaccount.yaml
-                  kubectl apply -f /tmp/k8s-manifests/configmap.yaml
-                  kubectl apply -f /tmp/k8s-manifests/database-services.yaml
-                  kubectl apply -f /tmp/k8s-manifests/backend-deployment.yaml
-                  kubectl apply -f /tmp/k8s-manifests/workers-deployment.yaml
-                  kubectl apply -f /tmp/k8s-manifests/frontend-deployment.yaml
-                  kubectl apply -f /tmp/k8s-manifests/loadbalancer-services.yaml
-                  kubectl apply -f /tmp/k8s-manifests/external-secrets.yaml
+                  # Deploy using Helm
+                  helm upgrade --install ecommerce-vti . \
+                    --namespace $NAMESPACE \
+                    --create-namespace \
+                    --values ./values.yaml \
+                    --values ./values-$ENVIRONMENT.yaml \
+                    --set image.tag=$IMAGE_TAG \
+                    --set image.repository=$ECR_REPOSITORY \
+                    --set namespace.name=$NAMESPACE \
+                    --wait \
+                    --timeout=10m
 
                   # Wait for main deployments to be ready
                   kubectl wait --for=condition=available --timeout=600s deployment/backend-app -n $NAMESPACE
@@ -207,9 +180,16 @@ jobs:
                   echo "- **Environment:** $ENVIRONMENT" >> $GITHUB_STEP_SUMMARY
                   echo "- **Namespace:** $NAMESPACE" >> $GITHUB_STEP_SUMMARY
                   echo "- **Commit SHA:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+                  echo "- **Helm Release:** ecommerce-vti" >> $GITHUB_STEP_SUMMARY
                   echo "" >> $GITHUB_STEP_SUMMARY
-
+                  
                   echo "### 📊 Application Status" >> $GITHUB_STEP_SUMMARY
                   echo '```' >> $GITHUB_STEP_SUMMARY
                   kubectl get pods -n $NAMESPACE >> $GITHUB_STEP_SUMMARY
+                  echo '```' >> $GITHUB_STEP_SUMMARY
+                  echo "" >> $GITHUB_STEP_SUMMARY
+                  
+                  echo "### 🎯 Helm Release Info" >> $GITHUB_STEP_SUMMARY
+                  echo '```' >> $GITHUB_STEP_SUMMARY
+                  helm list -n $NAMESPACE >> $GITHUB_STEP_SUMMARY
                   echo '```' >> $GITHUB_STEP_SUMMARY
