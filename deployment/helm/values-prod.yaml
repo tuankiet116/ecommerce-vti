@@ -71,12 +71,12 @@ externalSecrets:
     frontend:
         awsSecretName: DE000079-ecommerce-vti-frontend-prod
     secretStore:
-        roleArn: arn:aws:iam::234139188789:role/external-secrets-prod-role
+        roleArn: arn:aws:iam::234139188789:role/DE000079-prod-external-secrets-irsa # Use dedicated External Secrets role for prod
 
 # Production Service Account
 serviceAccount:
     annotations:
-        eks.amazonaws.com/role-arn: arn:aws:iam::234139188789:role/external-secrets-prod-role
+        eks.amazonaws.com/role-arn: arn:aws:iam::234139188789:role/DE000079-prod-external-secrets-irsa # Use dedicated External Secrets role for prod
 
 # Production ConfigMap
 configMap:

@@ -161,22 +161,22 @@ externalSecrets:
     enabled: true
     backend:
         secretName: backend-secrets
-        awsSecretName: DE000079-ecommerce-vti-backend-dev
+        awsSecretName: DE000079-ecommerce-vti-backend-dev # Will be overridden by CI/CD
     frontend:
         secretName: frontend-secrets
-        awsSecretName: DE000079-ecommerce-vti-frontend-dev
+        awsSecretName: DE000079-ecommerce-vti-frontend-dev # Will be overridden by CI/CD
     secretStore:
         name: aws-secret-store
         region: ap-southeast-2
         serviceAccount: external-secrets-sa
-        roleArn: arn:aws:iam::234139188789:role/external-secrets-dev-role
+        roleArn: arn:aws:iam::234139188789:role/DE000079-dev-external-secrets-irsa # Use dedicated External Secrets role for dev
 
 # Service Account
 serviceAccount:
     create: true
     name: external-secrets-sa
     annotations:
-        eks.amazonaws.com/role-arn: arn:aws:iam::234139188789:role/external-secrets-dev-role
+        eks.amazonaws.com/role-arn: arn:aws:iam::234139188789:role/DE000079-dev-external-secrets-irsa # Use dedicated External Secrets role for dev
 
 # ConfigMap configuration
 configMap:
@@ -240,5 +240,5 @@ nodePort:
 
 # Namespace
 namespace:
-    create: true
-    name: ecommerce-vti
+    create: false # Let CI/CD create namespace to avoid conflicts
+    name: ecommerce-vti-dev # Will be overridden by CI/CD
