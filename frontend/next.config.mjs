@@ -12,10 +12,6 @@ const nextConfig = {
     },
     // Enable standalone output for Docker
     output: "standalone",
-    // Disable telemetry in production
-    telemetry: {
-        disabled: process.env.NODE_ENV === "production",
-    },
 };
 
 export default nextConfig;
