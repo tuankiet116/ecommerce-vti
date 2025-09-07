@@ -12,7 +12,9 @@ resources:
     - ../../base/backend-deployment.yaml
     - ../../base/workers-deployment.yaml
     - ../../base/frontend-deployment.yaml
-    - ../../base/ingress.yamlpatches:
+    - ../../base/ingress.yaml
+
+patches:
     - target:
           kind: Deployment
           name: backend-app
@@ -22,7 +24,7 @@ resources:
             value: 3
           - op: replace
             path: /spec/template/spec/containers/0/image
-            value: 234139188789.dkr.ecr.us-east-1.amazonaws.com/de000079-ecr-repo-prod:backend-latest
+            value: 234139188789.dkr.ecr.ap-southeast-2.amazonaws.com/de000079-ecr-repo-prod:backend-latest
           - op: replace
             path: /spec/template/spec/containers/0/env
             value:
@@ -44,7 +46,7 @@ resources:
       patch: |-
           - op: replace
             path: /spec/template/spec/containers/0/image
-            value: 234139188789.dkr.ecr.us-east-1.amazonaws.com/de000079-ecr-repo-prod:horizon-latest
+            value: 234139188789.dkr.ecr.ap-southeast-2.amazonaws.com/de000079-ecr-repo-prod:horizon-latest
           - op: replace
             path: /spec/template/spec/containers/0/env
             value:
@@ -64,7 +66,7 @@ resources:
       patch: |-
           - op: replace
             path: /spec/template/spec/containers/0/image
-            value: 234139188789.dkr.ecr.us-east-1.amazonaws.com/de000079-ecr-repo-prod:scheduler-latest
+            value: 234139188789.dkr.ecr.ap-southeast-2.amazonaws.com/de000079-ecr-repo-prod:scheduler-latest
           - op: replace
             path: /spec/template/spec/containers/0/env
             value:
@@ -87,7 +89,7 @@ resources:
             value: 3
           - op: replace
             path: /spec/template/spec/containers/0/image
-            value: 234139188789.dkr.ecr.us-east-1.amazonaws.com/de000079-ecr-repo-prod:frontend-latest
+            value: 234139188789.dkr.ecr.ap-southeast-2.amazonaws.com/de000079-ecr-repo-prod:frontend-latest
           - op: replace
             path: /spec/template/spec/containers/0/env
             value:
