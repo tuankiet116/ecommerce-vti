@@ -1,5 +1,12 @@
-# Default values for ecommerce-vti
-# This is a YAML-formatted file.
+# Default values for ecommer    targetPort: 8000
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  # HTTP health checks for Laravel serveThis is a YAML-formatted file.
 
 global:
   imageRegistry: ""
@@ -64,11 +71,11 @@ frontend:
     targetPort: 3000
   resources:
     limits:
-      cpu: 500m
-      memory: 512Mi
-    requests:
-      cpu: 250m
+      cpu: 200m
       memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
   livenessProbe:
     httpGet:
       path: /
@@ -94,11 +101,11 @@ horizon:
     name: horizon
   resources:
     limits:
-      cpu: 250m
-      memory: 256Mi
-    requests:
       cpu: 100m
       memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
 
 scheduler:
   name: scheduler-worker
@@ -107,11 +114,11 @@ scheduler:
     name: scheduler
   resources:
     limits:
-      cpu: 250m
-      memory: 256Mi
-    requests:
       cpu: 100m
       memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
 
 # Database (PostgreSQL)
 postgresql:
