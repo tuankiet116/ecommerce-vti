@@ -154,9 +154,8 @@ jobs:
                   ENVIRONMENT: ${{ steps.env.outputs.environment }}
                   NAMESPACE: ${{ steps.env.outputs.namespace }}
               run: |
+                  # Update image tags in environment kustomization
                   cd deployment/k8s/environments/$ENVIRONMENT
-
-                  # Update image tags
                   sed -i "s|backend-latest|backend-$IMAGE_TAG|g" kustomization.yaml
                   sed -i "s|horizon-latest|horizon-$IMAGE_TAG|g" kustomization.yaml
                   sed -i "s|scheduler-latest|scheduler-$IMAGE_TAG|g" kustomization.yaml
@@ -165,20 +164,22 @@ jobs:
                   # Update namespace
                   sed -i "s|namespace: ecommerce-vti|namespace: $NAMESPACE|g" kustomization.yaml
 
-                  # Update secrets placeholders
-                  sed -i "s|BACKEND_SECRETS_NAME|${{ secrets.BACKEND_SECRET_NAME }}|g" ../../base/external-secrets.yaml
-                  sed -i "s|FRONTEND_SECRETS_NAME|${{ secrets.FRONTEND_SECRET_NAME }}|g" ../../base/external-secrets.yaml
+                  # Go back to k8s directory to update base files
+                  cd ../..
 
-                  # Update IAM role
+                  # Update secrets placeholders in base files
+                  sed -i "s|BACKEND_SECRETS_NAME|${{ secrets.BACKEND_SECRET_NAME }}|g" base/external-secrets.yaml
+                  sed -i "s|FRONTEND_SECRETS_NAME|${{ secrets.FRONTEND_SECRET_NAME }}|g" base/external-secrets.yaml
+
+                  # Update IAM role in serviceaccount
                   if [[ "$ENVIRONMENT" == "prod" ]]; then
-                    sed -i "s|EXTERNAL_SECRETS_ROLE_ARN|arn:aws:iam::234139188789:role/external-secrets-prod-role|g" ../../base/serviceaccount.yaml
+                    sed -i "s|EXTERNAL_SECRETS_ROLE_ARN|arn:aws:iam::234139188789:role/external-secrets-prod-role|g" base/serviceaccount.yaml
                   else
-                    sed -i "s|EXTERNAL_SECRETS_ROLE_ARN|arn:aws:iam::234139188789:role/external-secrets-dev-role|g" ../../base/serviceaccount.yaml
+                    sed -i "s|EXTERNAL_SECRETS_ROLE_ARN|arn:aws:iam::234139188789:role/external-secrets-dev-role|g" base/serviceaccount.yaml
                   fi
 
-                  # Deploy everything at once
-                  cd ../..
-                  kubectl apply -k environments/$ENVIRONMENT
+                  # Deploy from k8s directory with correct path structure
+                  kubectl kustomize environments/$ENVIRONMENT | kubectl apply -f -
 
                   # Wait for main deployments to be ready
                   kubectl wait --for=condition=available --timeout=600s deployment/backend-app -n $NAMESPACE
