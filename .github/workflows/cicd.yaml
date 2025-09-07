@@ -45,18 +45,6 @@ jobs:
               with:
                   version: 9.0.0
 
-            - name: Get pnpm store directory
-              id: pnpm-cache
-              working-directory: ./frontend
-              run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-
-            - name: Cache pnpm store
-              uses: actions/cache@v3
-              with:
-                  path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-                  key: ${{ runner.os }}-pnpm-store-${{ hashFiles('frontend/pnpm-lock.yaml') }}
-                  restore-keys: ${{ runner.os }}-pnpm-store-
-
             - name: Install frontend dependencies
               working-directory: ./frontend
               run: pnpm install --frozen-lockfile
@@ -89,33 +77,15 @@ jobs:
             - name: Determine environment
               id: env
               run: |
-                  echo "=== Debug Info ==="
-                  echo "Current ref: ${{ github.ref }}"
-                  echo "Branch: ${{ github.ref_name }}"
-
                   if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
                     echo "environment=prod" >> $GITHUB_OUTPUT
-                    echo "aws_role_arn=${{ secrets.AWS_ROLE_ARN }}" >> $GITHUB_OUTPUT
-                    echo "ecr_repository=${{ secrets.ECR_REPOSITORY }}" >> $GITHUB_OUTPUT
-                    echo "eks_cluster=${{ secrets.EKS_CLUSTER_NAME }}" >> $GITHUB_OUTPUT
-                    echo "namespace=${{ secrets.NAMESPACE }}" >> $GITHUB_OUTPUT
-                    echo "backend_secrets=${{ secrets.BACKEND_SECRET_NAME }}" >> $GITHUB_OUTPUT
-                    echo "frontend_secrets=${{ secrets.FRONTEND_SECRET_NAME }}" >> $GITHUB_OUTPUT
-                    
-                    echo "Selected: PROD environment"
-                    echo "ECR Repository: ${{ secrets.ECR_REPOSITORY }}"
                   else
                     echo "environment=dev" >> $GITHUB_OUTPUT
-                    echo "aws_role_arn=${{ secrets.AWS_ROLE_ARN }}" >> $GITHUB_OUTPUT
-                    echo "ecr_repository=${{ secrets.ECR_REPOSITORY }}" >> $GITHUB_OUTPUT
-                    echo "eks_cluster=${{ secrets.EKS_CLUSTER_NAME }}" >> $GITHUB_OUTPUT
-                    echo "namespace=${{ secrets.NAMESPACE }}" >> $GITHUB_OUTPUT
-                    echo "backend_secrets=${{ secrets.BACKEND_SECRET_NAME }}" >> $GITHUB_OUTPUT
-                    echo "frontend_secrets=${{ secrets.FRONTEND_SECRET_NAME }}" >> $GITHUB_OUTPUT
-                    
-                    echo "Selected: DEV environment"
-                    echo "ECR Repository: ${{ secrets.ECR_REPOSITORY }}"
                   fi
+                  echo "aws_role_arn=${{ secrets.AWS_ROLE_ARN }}" >> $GITHUB_OUTPUT
+                  echo "ecr_repository=${{ secrets.ECR_REPOSITORY }}" >> $GITHUB_OUTPUT
+                  echo "eks_cluster=${{ secrets.EKS_CLUSTER_NAME }}" >> $GITHUB_OUTPUT
+                  echo "namespace=${{ secrets.NAMESPACE }}" >> $GITHUB_OUTPUT
 
             - name: Configure AWS credentials
               uses: aws-actions/configure-aws-credentials@v4
@@ -128,194 +98,91 @@ jobs:
               id: login-ecr
               uses: aws-actions/amazon-ecr-login@v2
 
-            - name: Debug build variables
-              env:
-                  ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-                  ECR_REPOSITORY: ${{ steps.env.outputs.ecr_repository }}
-                  IMAGE_TAG: ${{ github.sha }}
-                  ENVIRONMENT: ${{ steps.env.outputs.environment }}
-              run: |
-                  echo "=== Build Variables Debug ==="
-                  echo "ECR_REGISTRY: $ECR_REGISTRY"
-                  echo "ECR_REPOSITORY: $ECR_REPOSITORY"
-                  echo "IMAGE_TAG: $IMAGE_TAG"
-                  echo "ENVIRONMENT: $ENVIRONMENT"
-                  echo "=========================="
-
-            - name: Build and tag Docker images
+            - name: Build and push Docker images
               env:
                   ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
                   ECR_REPOSITORY: ${{ steps.env.outputs.ecr_repository }}
                   IMAGE_TAG: ${{ github.sha }}
               run: |
-                  # Check if ECR_REPOSITORY is set
-                  if [ -z "$ECR_REPOSITORY" ]; then
-                    echo "ERROR: ECR_REPOSITORY is empty!"
-                    echo "Make sure GitHub Secret is set correctly"
-                    exit 1
-                  fi
-
-                  # Build backend images
+                  # Build and push backend images
                   docker build -f deployment/docker/backend.Dockerfile -t $ECR_REGISTRY/$ECR_REPOSITORY:backend-$IMAGE_TAG --target production .
-                  docker build -f deployment/docker/backend.Dockerfile -t $ECR_REGISTRY/$ECR_REPOSITORY:horizon-$IMAGE_TAG --target horizon .
-                  docker build -f deployment/docker/backend.Dockerfile -t $ECR_REGISTRY/$ECR_REPOSITORY:scheduler-$IMAGE_TAG --target scheduler .
-
-                  # Build frontend image
-                  docker build -f deployment/docker/frontend.Dockerfile -t $ECR_REGISTRY/$ECR_REPOSITORY:frontend-$IMAGE_TAG .
-
-            - name: Push images to ECR
-              env:
-                  ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-                  ECR_REPOSITORY: ${{ steps.env.outputs.ecr_repository }}
-                  IMAGE_TAG: ${{ github.sha }}
-              run: |
                   docker push $ECR_REGISTRY/$ECR_REPOSITORY:backend-$IMAGE_TAG
+
+                  docker build -f deployment/docker/backend.Dockerfile -t $ECR_REGISTRY/$ECR_REPOSITORY:horizon-$IMAGE_TAG --target horizon .
                   docker push $ECR_REGISTRY/$ECR_REPOSITORY:horizon-$IMAGE_TAG
+
+                  docker build -f deployment/docker/backend.Dockerfile -t $ECR_REGISTRY/$ECR_REPOSITORY:scheduler-$IMAGE_TAG --target scheduler .
                   docker push $ECR_REGISTRY/$ECR_REPOSITORY:scheduler-$IMAGE_TAG
+
+                  # Build and push frontend image
+                  docker build -f deployment/docker/frontend.Dockerfile -t $ECR_REGISTRY/$ECR_REPOSITORY:frontend-$IMAGE_TAG .
                   docker push $ECR_REGISTRY/$ECR_REPOSITORY:frontend-$IMAGE_TAG
 
-            - name: Update Kubernetes manifests
+            - name: Setup External Secrets Operator
+              env:
+                  EKS_CLUSTER: ${{ steps.env.outputs.eks_cluster }}
+              run: |
+                  # Update kubeconfig
+                  aws eks update-kubeconfig --region $AWS_REGION --name $EKS_CLUSTER
+
+                  # Install External Secrets Operator using official method
+                  if ! kubectl get namespace external-secrets-system &> /dev/null; then
+                    echo "Installing External Secrets Operator..."
+                    helm repo add external-secrets https://charts.external-secrets.io
+                    helm repo update
+                    helm install external-secrets external-secrets/external-secrets \
+                      -n external-secrets-system \
+                      --create-namespace \
+                      --wait \
+                      --timeout=10m
+                    
+                    echo "Waiting for External Secrets to be ready..."
+                    kubectl wait --for=condition=available deployment -l app.kubernetes.io/name=external-secrets -n external-secrets-system --timeout=600s
+                  else
+                    echo "External Secrets Operator already exists"
+                  fi
+
+                  # Simple wait for CRDs to be ready
+                  echo "Waiting for CRDs to be established..."
+                  kubectl wait --for condition=established --timeout=300s crd/externalsecrets.external-secrets.io crd/secretstores.external-secrets.io
+
+            - name: Update manifests and deploy
               env:
                   ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
                   ECR_REPOSITORY: ${{ steps.env.outputs.ecr_repository }}
                   IMAGE_TAG: ${{ github.sha }}
                   ENVIRONMENT: ${{ steps.env.outputs.environment }}
-                  BACKEND_SECRETS: ${{ steps.env.outputs.backend_secrets }}
-                  FRONTEND_SECRETS: ${{ steps.env.outputs.frontend_secrets }}
                   NAMESPACE: ${{ steps.env.outputs.namespace }}
               run: |
-                  # Update kustomization with new image tags
                   cd deployment/k8s/environments/$ENVIRONMENT
 
-                  # Update image tags in kustomization.yaml
+                  # Update image tags
                   sed -i "s|backend-latest|backend-$IMAGE_TAG|g" kustomization.yaml
                   sed -i "s|horizon-latest|horizon-$IMAGE_TAG|g" kustomization.yaml
                   sed -i "s|scheduler-latest|scheduler-$IMAGE_TAG|g" kustomization.yaml
                   sed -i "s|frontend-latest|frontend-$IMAGE_TAG|g" kustomization.yaml
 
-                  # Update secrets names in external-secrets.yaml
-                  sed -i "s|BACKEND_SECRETS_NAME|$BACKEND_SECRETS|g" ../../base/external-secrets.yaml
-                  sed -i "s|FRONTEND_SECRETS_NAME|$FRONTEND_SECRETS|g" ../../base/external-secrets.yaml
+                  # Update namespace
+                  sed -i "s|namespace: ecommerce-vti|namespace: $NAMESPACE|g" kustomization.yaml
 
-                  # Update other placeholders based on environment
+                  # Update secrets placeholders
+                  sed -i "s|BACKEND_SECRETS_NAME|${{ secrets.BACKEND_SECRET_NAME }}|g" ../../base/external-secrets.yaml
+                  sed -i "s|FRONTEND_SECRETS_NAME|${{ secrets.FRONTEND_SECRET_NAME }}|g" ../../base/external-secrets.yaml
+
+                  # Update IAM role
                   if [[ "$ENVIRONMENT" == "prod" ]]; then
-                    # Production domains and settings (commented out until domains are ready)
-                    # sed -i "s|FRONTEND_DOMAIN|app.ecommerce-vti.com|g" ../../base/ingress.yaml
-                    # sed -i "s|BACKEND_DOMAIN|api.ecommerce-vti.com|g" ../../base/ingress.yaml
-                    # sed -i "s|CERTIFICATE_ARN|arn:aws:acm:ap-southeast-2:234139188789:certificate/your-prod-cert-id|g" ../../base/ingress.yaml
                     sed -i "s|EXTERNAL_SECRETS_ROLE_ARN|arn:aws:iam::234139188789:role/external-secrets-prod-role|g" ../../base/serviceaccount.yaml
                   else
-                    # Development domains and settings (commented out until domains are ready) 
-                    # sed -i "s|FRONTEND_DOMAIN|dev.ecommerce-vti.com|g" ../../base/ingress.yaml
-                    # sed -i "s|BACKEND_DOMAIN|api-dev.ecommerce-vti.com|g" ../../base/ingress.yaml
-                    # sed -i "s|CERTIFICATE_ARN|arn:aws:acm:ap-southeast-2:234139188789:certificate/your-dev-cert-id|g" ../../base/ingress.yaml
                     sed -i "s|EXTERNAL_SECRETS_ROLE_ARN|arn:aws:iam::234139188789:role/external-secrets-dev-role|g" ../../base/serviceaccount.yaml
                   fi
 
-                  # Update namespace in kustomization.yaml
-                  sed -i "s|namespace: ecommerce-vti|namespace: $NAMESPACE|g" kustomization.yaml
+                  # Deploy everything at once
+                  cd ../..
+                  kubectl apply -k environments/$ENVIRONMENT
 
-            - name: Deploy to EKS
-              env:
-                  EKS_CLUSTER: ${{ steps.env.outputs.eks_cluster }}
-                  ENVIRONMENT: ${{ steps.env.outputs.environment }}
-                  NAMESPACE: ${{ steps.env.outputs.namespace }}
-              run: |
-                  # Update kubeconfig
-                  aws eks update-kubeconfig --region $AWS_REGION --name $EKS_CLUSTER
-
-                  # Install external-secrets operator if not exists
-                  if ! kubectl get namespace external-secrets-system &> /dev/null; then
-                    echo "Installing External Secrets Operator..."
-                    helm repo add external-secrets https://charts.external-secrets.io
-                    helm repo update
-                    helm install external-secrets external-secrets/external-secrets -n external-secrets-system --create-namespace --wait --timeout=10m
-                    
-                    # Wait for deployment to be ready
-                    echo "Waiting for External Secrets Operator to be ready..."
-                    kubectl wait --for=condition=available deployment/external-secrets -n external-secrets-system --timeout=600s
-                    kubectl wait --for=condition=available deployment/external-secrets-webhook -n external-secrets-system --timeout=600s
-                    kubectl wait --for=condition=available deployment/external-secrets-cert-controller -n external-secrets-system --timeout=600s
-                  else
-                    echo "External Secrets Operator already exists"
-                    # Check if it's healthy
-                    kubectl get pods -n external-secrets-system
-                  fi
-
-                  # Ensure External Secrets CRDs are installed and ready
-                  echo "Checking External Secrets CRDs..."
-                  if ! kubectl get crd externalsecrets.external-secrets.io &> /dev/null; then
-                    echo "Installing External Secrets CRDs..."
-                    kubectl apply -f https://raw.githubusercontent.com/external-secrets/external-secrets/main/deploy/crds/bundle.yaml
-                  fi
-
-                  if ! kubectl get crd secretstores.external-secrets.io &> /dev/null; then
-                    echo "Installing SecretStore CRDs..."
-                    kubectl apply -f https://raw.githubusercontent.com/external-secrets/external-secrets/main/deploy/crds/bundle.yaml
-                  fi
-
-                  # Wait for External Secrets CRDs to be ready with retries
-                  echo "Waiting for External Secrets CRDs to be available..."
-                  for i in {1..10}; do
-                    if kubectl wait --for condition=established --timeout=60s crd/externalsecrets.external-secrets.io crd/secretstores.external-secrets.io; then
-                      echo "CRDs are ready!"
-                      break
-                    else
-                      echo "CRDs not ready yet, retrying ($i/10)..."
-                      if [ $i -eq 10 ]; then
-                        echo "Failed to establish CRDs after 10 attempts"
-                        kubectl get crd | grep external-secrets || echo "No external-secrets CRDs found"
-                        exit 1
-                      fi
-                      sleep 10
-                    fi
-                  done
-
-                  # Verify CRDs are actually working
-                  echo "Verifying CRDs functionality..."
-                  kubectl api-resources | grep external-secrets || {
-                    echo "ERROR: External Secrets API resources not available"
-                    exit 1
-                  }
-
-                  # Deploy application in phases
-                  cd deployment/k8s
-
-                  # Phase 1: Apply basic resources first (namespace, configmaps, services, deployments)
-                  echo "Phase 1: Deploying basic resources..."
-                  kubectl kustomize environments/$ENVIRONMENT --load-restrictor=LoadRestrictionsNone > /tmp/complete-manifest.yaml
-
-                  # Apply everything except external-secrets
-                  grep -v -E "^(apiVersion: external-secrets\.io|kind: (ExternalSecret|SecretStore))" /tmp/complete-manifest.yaml | \
-                    kubectl apply -f -
-
-                  # Phase 2: Apply external-secrets separately with error handling
-                  echo "Phase 2: Deploying external-secrets..."
-
-                  # Wait a bit more for operator to be fully ready
-                  sleep 10
-
-                  # Double check CRDs are available
-                  kubectl get crd externalsecrets.external-secrets.io
-                  kubectl get crd secretstores.external-secrets.io
-
-                  # Apply external-secrets with namespace substitution
-                  sed "s/namespace: ecommerce-vti/namespace: $NAMESPACE/g" base/external-secrets.yaml | \
-                    kubectl apply -f - || {
-                      echo "Failed to apply external-secrets, debugging..."
-                      kubectl get crd | grep external-secrets
-                      kubectl api-resources | grep external-secrets
-                      kubectl get pods -n external-secrets-system
-                      echo "External secrets manifest:"
-                      sed "s/namespace: ecommerce-vti/namespace: $NAMESPACE/g" base/external-secrets.yaml
-                      exit 1
-                    }
-
-                  # Wait for deployments
+                  # Wait for main deployments to be ready
                   kubectl wait --for=condition=available --timeout=600s deployment/backend-app -n $NAMESPACE
                   kubectl wait --for=condition=available --timeout=600s deployment/frontend-app -n $NAMESPACE
-                  kubectl wait --for=condition=available --timeout=600s deployment/horizon-worker -n $NAMESPACE
-                  kubectl wait --for=condition=available --timeout=600s deployment/scheduler-worker -n $NAMESPACE
 
             - name: Deployment summary
               env:
@@ -326,34 +193,9 @@ jobs:
                   echo "- **Environment:** $ENVIRONMENT" >> $GITHUB_STEP_SUMMARY
                   echo "- **Namespace:** $NAMESPACE" >> $GITHUB_STEP_SUMMARY
                   echo "- **Commit SHA:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-                  echo "- **Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
-                  echo "" >> $GITHUB_STEP_SUMMARY
-
-                  echo "### 🌐 Application URLs" >> $GITHUB_STEP_SUMMARY
-                  echo "**Frontend:**" >> $GITHUB_STEP_SUMMARY
-                  FRONTEND_URL=$(kubectl get svc frontend-loadbalancer -n $NAMESPACE -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "Pending...")
-                  if [[ "$FRONTEND_URL" != "Pending..." ]]; then
-                    echo "- http://$FRONTEND_URL" >> $GITHUB_STEP_SUMMARY
-                  else
-                    echo "- LoadBalancer URL pending (check AWS console)" >> $GITHUB_STEP_SUMMARY
-                  fi
-
-                  echo "**Backend API:**" >> $GITHUB_STEP_SUMMARY
-                  BACKEND_URL=$(kubectl get svc backend-loadbalancer -n $NAMESPACE -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "Pending...")
-                  if [[ "$BACKEND_URL" != "Pending..." ]]; then
-                    echo "- http://$BACKEND_URL" >> $GITHUB_STEP_SUMMARY
-                  else
-                    echo "- LoadBalancer URL pending (check AWS console)" >> $GITHUB_STEP_SUMMARY
-                  fi
                   echo "" >> $GITHUB_STEP_SUMMARY
 
                   echo "### 📊 Application Status" >> $GITHUB_STEP_SUMMARY
                   echo '```' >> $GITHUB_STEP_SUMMARY
                   kubectl get pods -n $NAMESPACE >> $GITHUB_STEP_SUMMARY
-                  echo '```' >> $GITHUB_STEP_SUMMARY
-                  echo "" >> $GITHUB_STEP_SUMMARY
-
-                  echo "### 🔗 LoadBalancer Services" >> $GITHUB_STEP_SUMMARY
-                  echo '```' >> $GITHUB_STEP_SUMMARY
-                  kubectl get svc -n $NAMESPACE -o wide >> $GITHUB_STEP_SUMMARY
                   echo '```' >> $GITHUB_STEP_SUMMARY
