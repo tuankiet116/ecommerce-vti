@@ -117,33 +117,97 @@ jobs:
               with:
                   version: 'v3.12.0'
 
-            - name: Setup Kubernetes
+            - name: Setup Kubernetes and External Secrets
               env:
                   EKS_CLUSTER: ${{ steps.env.outputs.eks_cluster }}
               run: |
                   # Update kubeconfig
                   aws eks update-kubeconfig --region $AWS_REGION --name $EKS_CLUSTER
 
-                  # Install External Secrets Operator if not exists
-                  if ! kubectl get namespace external-secrets-system &> /dev/null; then
+                  # Check cluster connectivity
+                  echo "Testing cluster connectivity..."
+                  kubectl cluster-info
+
+                  # Add External Secrets Helm repo
+                  helm repo add external-secrets https://charts.external-secrets.io
+                  helm repo update
+
+                  # Check if External Secrets Operator is installed and working
+                  echo "Checking External Secrets Operator status..."
+                  if kubectl get namespace external-secrets-system &> /dev/null; then
+                    echo "External Secrets namespace exists, checking deployment..."
+                    if kubectl get deployment external-secrets -n external-secrets-system &> /dev/null; then
+                      echo "External Secrets deployment exists, checking if ready..."
+                      if kubectl wait --for=condition=available deployment/external-secrets -n external-secrets-system --timeout=30s; then
+                        echo "External Secrets is ready"
+                      else
+                        echo "External Secrets deployment not ready, reinstalling..."
+                        helm uninstall external-secrets -n external-secrets-system || true
+                        kubectl delete namespace external-secrets-system --timeout=60s || true
+                        sleep 10
+                        helm install external-secrets external-secrets/external-secrets \
+                          -n external-secrets-system \
+                          --create-namespace \
+                          --wait \
+                          --timeout=10m
+                      fi
+                    else
+                      echo "External Secrets deployment missing, installing..."
+                      helm install external-secrets external-secrets/external-secrets \
+                        -n external-secrets-system \
+                        --create-namespace \
+                        --wait \
+                        --timeout=10m
+                    fi
+                  else
                     echo "Installing External Secrets Operator..."
-                    helm repo add external-secrets https://charts.external-secrets.io
-                    helm repo update
                     helm install external-secrets external-secrets/external-secrets \
                       -n external-secrets-system \
                       --create-namespace \
                       --wait \
                       --timeout=10m
-                    
-                    echo "Waiting for External Secrets to be ready..."
-                    kubectl wait --for=condition=available deployment -l app.kubernetes.io/name=external-secrets -n external-secrets-system --timeout=600s
-                  else
-                    echo "External Secrets Operator already exists"
                   fi
 
-                  # Wait for CRDs to be ready
-                  echo "Waiting for CRDs to be established..."
-                  kubectl wait --for condition=established --timeout=300s crd/externalsecrets.external-secrets.io crd/secretstores.external-secrets.io
+                  # Verify CRDs are properly installed and ready
+                  echo "Verifying External Secrets CRDs..."
+                  for i in {1..10}; do
+                    if kubectl get crd externalsecrets.external-secrets.io secretstores.external-secrets.io &> /dev/null; then
+                      echo "CRDs found, waiting for them to be established..."
+                      if kubectl wait --for condition=established --timeout=60s \
+                        crd/externalsecrets.external-secrets.io \
+                        crd/secretstores.external-secrets.io; then
+                        echo "All CRDs are ready!"
+                        break
+                      fi
+                    fi
+                    
+                    if [ $i -eq 10 ]; then
+                      echo "CRDs not ready after 10 attempts, listing available CRDs..."
+                      kubectl get crd | grep external-secrets || echo "No external-secrets CRDs found"
+                      echo "Forcing reinstall of External Secrets Operator..."
+                      helm uninstall external-secrets -n external-secrets-system || true
+                      kubectl delete namespace external-secrets-system --timeout=60s || true
+                      sleep 10
+                      helm install external-secrets external-secrets/external-secrets \
+                        -n external-secrets-system \
+                        --create-namespace \
+                        --wait \
+                        --timeout=10m
+                      kubectl wait --for condition=established --timeout=300s \
+                        crd/externalsecrets.external-secrets.io \
+                        crd/secretstores.external-secrets.io
+                      break
+                    fi
+                    
+                    echo "Attempt $i: CRDs not ready, waiting 10 seconds..."
+                    sleep 10
+                  done
+
+                  # Final verification
+                  echo "Final CRDs verification:"
+                  kubectl get crd | grep external-secrets
+                  echo "External Secrets pods:"
+                  kubectl get pods -n external-secrets-system
 
             - name: Deploy with Helm
               env:
@@ -155,8 +219,33 @@ jobs:
               run: |
                   cd deployment/helm
 
-                  # Deploy using Helm
-                  helm upgrade --install ecommerce-vti . \
+                  # Pre-deployment verification
+                  echo "=== Pre-deployment verification ==="
+                  echo "Checking External Secrets CRDs..."
+                  kubectl get crd | grep external-secrets
+
+                  echo "Checking External Secrets Operator pods..."
+                  kubectl get pods -n external-secrets-system
+
+                  echo "Testing CRD access..."
+                  kubectl api-resources | grep external-secrets
+
+                  # Debug: Template validation without CRDs dependency
+                  echo "=== Validating Helm templates ==="
+                  helm template ecommerce-vti . \
+                    --values ./values.yaml \
+                    --values ./values-$ENVIRONMENT.yaml \
+                    --set image.tag=$IMAGE_TAG \
+                    --set image.repository=$ECR_REPOSITORY \
+                    --set namespace.name=$NAMESPACE \
+                    --debug > /tmp/helm-template-output.yaml
+
+                  echo "Generated templates preview (first 50 lines):"
+                  head -50 /tmp/helm-template-output.yaml
+
+                  # Deploy using Helm with enhanced error handling
+                  echo "=== Starting Helm deployment ==="
+                  if ! helm upgrade --install ecommerce-vti . \
                     --namespace $NAMESPACE \
                     --create-namespace \
                     --values ./values.yaml \
@@ -165,9 +254,27 @@ jobs:
                     --set image.repository=$ECR_REPOSITORY \
                     --set namespace.name=$NAMESPACE \
                     --wait \
-                    --timeout=10m
+                    --timeout=10m \
+                    --debug; then
+                    
+                    echo "=== Helm deployment failed, gathering debug info ==="
+                    echo "Helm status:"
+                    helm status ecommerce-vti -n $NAMESPACE || echo "No release found"
+                    
+                    echo "Checking for failed resources:"
+                    kubectl get events -n $NAMESPACE --sort-by='.lastTimestamp' | tail -20
+                    
+                    echo "Namespace resources:"
+                    kubectl get all -n $NAMESPACE || echo "Namespace might not exist"
+                    
+                    echo "CRDs status after failed deployment:"
+                    kubectl get crd | grep external-secrets
+                    
+                    exit 1
+                  fi
 
                   # Wait for main deployments to be ready
+                  echo "=== Waiting for deployments to be ready ==="
                   kubectl wait --for=condition=available --timeout=600s deployment/backend-app -n $NAMESPACE
                   kubectl wait --for=condition=available --timeout=600s deployment/frontend-app -n $NAMESPACE
 
